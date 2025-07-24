@@ -1,0 +1,9 @@
+# Firebase / Google / OpenAI 機密ファイル
+*.json
+
+# Pythonキャッシュなど無視
+__pycache__/
+*.pyc
+
+# 環境変数ファイル（今後追加）
+.env
