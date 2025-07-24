@@ -1,0 +1,8 @@
+Flask
+firebase-admin
+flask-cors
+gspread
+oauth2client
+openai
+google-cloud-firestore
+pytz
