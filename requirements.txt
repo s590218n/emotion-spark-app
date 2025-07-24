@@ -7,3 +7,4 @@ openai
 google-cloud-firestore
 pytz
 gunicorn
+python-dotenv
