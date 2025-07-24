@@ -7,3 +7,4 @@ __pycache__/
 
 # 環境変数ファイル（今後追加）
 .env.env
+.env
