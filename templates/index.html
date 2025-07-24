@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotions Spark</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f4f8;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 50px;
+      font-size: 28px;
+      color: #333;
+    }
+
+    .emotion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 20px;
+      padding: 40px 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .emotion-btn {
+      background-color: #ffffff;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+      position: relative;
+    }
+
+    .emotion-btn:hover {
+      background-color: #e6f0ff;
+    }
+
+    .tooltip {
+      visibility: hidden;
+      background-color: #444;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      font-size: 12px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      width: max-content;
+      max-width: 200px;
+    }
+
+    .emotion-btn:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .scene-select {
+      margin: 20px auto 40px;
+      max-width: 600px;
+    }
+
+    .scene-select select {
+      font-size: 16px;
+      padding: 10px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .submit-button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .submit-button:hover {
+      background-color: #0056b3;
+    }
+
+    .history-link {
+      margin-top: 40px;
+    }
+
+    .history-link a {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: 0.3s;
+    }
+
+    .history-link a:hover {
+      background-color: #45a049;
+    }
+
+    .freeform-block {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .freeform-block label {
+      display: block;
+      text-align: left;
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 15px;
+      color: #333;
+    }
+
+    .freeform-block textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: vertical;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>今の気持ちに近いものを選んでください</h1>
+
+  <form action="/result" method="POST">
+    <div class="emotion-grid">
+      <button class="emotion-btn" type="submit" name="emotion" value="悲しみ">
+        😢 悲しみ
+        <div class="tooltip">心が沈んでいる、涙が出そうなとき</div>
+      </button>
+      <button class="emotion-btn" type="submit" name="emotion" value="怒り">
+        😠 怒り
+        <div class="tooltip">何かにイライラしたり、我慢できないとき</div>
+      </button>
+      <button class="emotion-btn" type="submit" name="emotion" value="喜び">
+        😊 喜び
+        <div class="tooltip">心があたたかく、うれしい気持ちのとき</div>
+      </button>
+      <button class="emotion-btn" type="submit" name="emotion" value="不安">
+        😟 不安
+        <div class="tooltip">先のことが心配、落ち着かないとき</div>
+      </button>
+      <button class="emotion-btn" type="submit" name="emotion" value="孤独">
+        🫥 孤独
+        <div class="tooltip">誰にもわかってもらえない気がするとき</div>
+      </button>
+      <button class="emotion-btn" type="submit" name="emotion" value="愛情">
+        ❤️ 愛情
+        <div class="tooltip">誰かを大切に思ったり、思われたいとき</div>
+      </button>
+      <button class="emotion-btn" type="submit" name="emotion" value="希望">
+        🌈 希望
+        <div class="tooltip">前向きになりたい、未来に期待したいとき</div>
+      </button>
+    </div>
+
+    <div class="scene-select">
+      <select name="scene">
+        <option value="">-- シーンを選んでください --</option>
+        <option value="夜にひとりでいるとき">夜にひとりでいるとき</option>
+        <option value="朝が来るのが怖いとき">朝が来るのが怖いとき</option>
+        <option value="眠れない夜">眠れない夜</option>
+        <option value="誰かに傷つけられたあと">誰かに傷つけられたあと</option>
+        <option value="自分を責めてしまうとき">自分を責めてしまうとき</option>
+        <option value="前に進みたいのに動けない">前に進みたいのに動けない</option>
+        <option value="誰にも話せないことがある">誰にも話せないことがある</option>
+        <option value="なぜかわからないけど苦しい">なぜかわからないけど苦しい</option>
+        <option value="未来が怖いと感じたとき">未来が怖いと感じたとき</option>
+        <option value="何かを失ったとき">何かを失ったとき</option>
+        <option value="嫌なことを思い出したとき">嫌なことを思い出したとき</option>
+        <option value="誰かを思い出したとき">誰かを思い出したとき</option>
+        <option value="気持ちを整理したいとき">気持ちを整理したいとき</option>
+        <option value="とにかく救われたいとき">とにかく救われたいとき</option>
+        <option value="夢が遠く感じるとき">夢が遠く感じるとき</option>
+        <option value="自分の価値がわからないとき">自分の価値がわからないとき</option>
+        <option value="泣きたくても泣けないとき">泣きたくても泣けないとき</option>
+      </select>
+
+      <button class="submit-button" type="submit">このシーンで名言を見る</button>
+    </div>
+
+    <!-- ✅ 自由入力欄 -->
+    <div class="freeform-block">
+      <label for="freeform">いまの気持ちや状況を自由に書いてもOK：</label>
+      <textarea id="freeform" name="freeform" rows="3" placeholder="例：眠れない夜で、誰にも相談できない気持ちです"></textarea>
+    </div>
+
+    <!-- ✅ 自由入力だけで進むためのボタン -->
+    <div style="text-align: center;">
+      <button class="submit-button" type="submit">自由入力だけで名言を見る</button>
+    </div>
+  </form>
+    
+  {% if session.uid %}
+  <div class="history-link">
+    <a href="/history">🌿 あなたの記録を見る</a>
+  </div>
+  {% endif %}
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotions Spark - 結果</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f9f9f9;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 90%;
+      margin: 0 auto 30px auto;
+    }
+
+    .quote {
+      font-size: 18px;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .author {
+      color: #555;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 14px 28px;
+      font-size: 16px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    button:hover {
+      background-color: #3367d6;
+    }
+
+    #gpt-output {
+      margin-top: 24px;
+      white-space: pre-line;
+      background-color: #eef5ff;
+      padding: 16px;
+      border-radius: 10px;
+      display: none;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .note {
+      margin-top: 10px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    .back-button {
+      margin-top: 30px;
+    }
+
+    .back-button a {
+      text-decoration: none;
+      background-color: #777;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+
+    .back-button a:hover {
+      background-color: #555;
+    }
+
+    .history-link {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .expand-link {
+      margin: 20px auto;
+      font-size: 14px;
+    }
+
+    .expand-link a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .expand-link a:hover {
+      text-decoration: underline;
+    }
+
+    .scene {
+      font-size: 15px;
+      margin-top: -8px;
+      margin-bottom: 20px;
+      color: #666;
+    }
+
+    hr {
+      margin: 30px auto;
+      width: 60%;
+      border: none;
+      border-top: 1px solid #ddd;
+    }
+
+    .freeform {
+      margin-top: -8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #777;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="font-size: 22px; margin-bottom: 10px;">あなたの感情：「{{ emotion }}」</h1>
+  {% if scene %}
+    <div class="scene">シーン：「{{ scene }}」</div>
+  {% endif %}
+  {% if freeform %}
+    <div class="freeform">あなたのことば：「{{ freeform }}」</div>
+  {% endif %}
+
+  {% for quote, author, _, _ in results %}
+    {% if expand or loop.first %}
+      <div class="card">
+        <div class="quote">「{{ quote }}」</div>
+        <div class="author">── {{ author }}</div>
+
+        {% if loop.first %}
+          {% if not used_today %}
+            <button onclick="getGPT()">もっと寄り添ってほしい</button>
+          {% else %}
+            <div class="note">※本日のGPT寄り添いはすでに使用済みです。また明日🌙</div>
+          {% endif %}
+          <div id="gpt-output"></div>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  <div class="expand-link">
+    {% if not expand %}
+      <a href="/result?expand=true">🔄 他の名言候補も見てみる</a>
+    {% else %}
+      <a href="/result">🔙 候補を閉じる</a>
+    {% endif %}
+  </div>
+
+  <div class="back-button">
+    <a href="/">別の感情を試す</a>
+  </div>
+
+  <a class="history-link" href="/history">🕘 使用履歴を表示する</a>
+
+  <script>
+    const emotion = {{ emotion|tojson }};
+    function getGPT() {
+      fetch(`/gpt?emotion=${encodeURIComponent(emotion)}`)
+        .then(res => res.text())
+        .then(data => {
+          const gptDiv = document.getElementById('gpt-output');
+          gptDiv.innerText = data;
+          gptDiv.style.display = 'block';
+        })
+        .catch(err => {
+          alert("GPTの呼び出し中にエラーが発生しました。" + err.message);
+        });
+    }
+  </script>
+</body>
+</html>

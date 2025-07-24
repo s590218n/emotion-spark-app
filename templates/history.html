@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>使用履歴 - Emotions Spark</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f9f9f9;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 22px;
+      color: #333;
+    }
+    form {
+      max-width: 700px;
+      margin: 0 auto 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    select {
+      padding: 8px;
+      font-size: 14px;
+    }
+    .log-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.08);
+      padding: 16px;
+      margin-bottom: 16px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+    }
+    .log-card .date {
+      font-size: 14px;
+      color: #888;
+    }
+    .log-card .emotion {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 6px;
+      color: #222;
+    }
+    .log-card .scene {
+      font-size: 16px;
+      color: #444;
+      margin-top: 4px;
+    }
+    .log-card .freeform {
+      font-size: 15px;
+      color: #555;
+      margin-top: 6px;
+    }
+    .log-card .quote {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #333;
+      line-height: 1.6;
+    }
+    .log-card .gpt {
+      margin-top: 12px;
+      background: #eef5ff;
+      padding: 10px;
+      border-radius: 8px;
+      white-space: pre-line;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .favorite {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .favorite.active {
+      color: gold;
+    }
+    .back-button {
+      display: block;
+      width: 90%;
+      max-width: 240px;
+      margin: 30px auto 0;
+      padding: 12px 24px;
+      background-color: #007bff;
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 15px;
+    }
+    .back-button:hover {
+      background-color: #0056b3;
+    }
+    canvas {
+      max-width: 800px;
+      margin: 40px auto;
+      display: block;
+    }
+    @media (max-width: 480px) {
+      .log-card {
+        padding: 14px;
+      }
+      .log-card .emotion {
+        font-size: 16px;
+      }
+      .log-card .scene,
+      .log-card .quote,
+      .log-card .gpt,
+      .log-card .freeform {
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>あなたの使用履歴</h1>
+
+  <form method="get" action="/history">
+    <select name="emotion">
+      <option value="">すべての感情</option>
+      {% for e in emotions %}
+        <option value="{{ e }}" {% if selected_emotion == e %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+    <select name="scene">
+      <option value="">すべてのシーン</option>
+      {% for s in scenes %}
+        <option value="{{ s }}" {% if selected_scene == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">絞り込み</button>
+  </form>
+
+  {% for record in records %}
+    <div class="log-card">
+      <div class="date">{{ record.timestamp }}</div>
+      <div class="emotion">感情：{{ record.emotion }}</div>
+      {% if record.scene %}
+        <div class="scene">シーン：{{ record.scene }}</div>
+      {% endif %}
+      {% if record.freeform %}
+        <div class="freeform">自由入力：「{{ record.freeform }}」</div>
+      {% endif %}
+      {% if record.quote %}
+        <div class="quote">名言：「{{ record.quote }}」<br>── {{ record.author }}</div>
+      {% endif %}
+      <div class="gpt">{{ record.gpt_response or "（AIコメントなし）" }}</div>
+      <div class="favorite {% if record.favorite %}active{% endif %}" onclick="toggleFavorite('{{ record.id }}', this)">★</div>
+    </div>
+  {% endfor %}
+
+  <canvas id="emotionChart"></canvas>
+
+  <a href="{{ url_for('index') }}" class="back-button">トップページへ戻る</a>
+
+  <script>
+    async function toggleFavorite(id, el) {
+      const isActive = el.classList.contains('active');
+      el.classList.toggle('active');
+      const res = await fetch(`/toggle_favorite/${id}`, {
+        method: 'POST'
+      });
+    }
+
+    const ctx = document.getElementById('emotionChart').getContext('2d');
+    const emotionData = {{ emotion_graph_data|safe }};
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: emotionData.labels,
+        datasets: [{
+          label: '感情推移',
+          data: emotionData.values,
+          fill: false,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

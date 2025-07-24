@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotions Spark - Login</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 60px 20px;
+      background: #f4f4f4;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 40px;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 6px;
+      background-color: #4285f4;
+      color: white;
+      cursor: pointer;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    button:hover {
+      background-color: #3367d6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Emotions Spark にログイン</h1>
+  <button onclick="signInWithGoogle()">Googleでログイン</button>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTXbYIQJDFvZ7clPG0707W7P2aLFWBIsI",
+      authDomain: "emotions-spark.firebaseapp.com",
+      projectId: "emotions-spark",
+      storageBucket: "emotions-spark.firebasestorage.app",
+      messagingSenderId: "181861031715",
+      appId: "1:181861031715:web:0392f7119d053d379b7696"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    async function signInWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        const result = await firebase.auth().signInWithPopup(provider);
+        const idToken = await result.user.getIdToken();
+        const res = await fetch("/verify-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          window.location.href = "/";
+        } else {
+          alert("トークン検証失敗：" + data.message);
+        }
+      } catch (error) {
+        alert("ログインエラー：" + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
