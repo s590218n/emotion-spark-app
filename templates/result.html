@@ -154,6 +154,14 @@
     <div class="freeform">あなたのことば：「{{ freeform }}」</div>
   {% endif %}
 
+    {% if results and results[0][0].startswith("※") %}
+    <div class="card" style="border: 2px solid #f5c518; background-color: #fffbe7; margin-bottom: 30px;">
+      <div style="font-size: 18px; line-height: 1.7; white-space: pre-line; color: #444;">
+        {{ results[0][0] }}
+      </div>
+    </div>
+  {% endif %}
+
   {% if results and results[0] %}
     {% set first = session.get("first_quote", results[0]) %}
     {% set first_quote = first[0] %}

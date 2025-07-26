@@ -143,10 +143,24 @@ def guess_scene_then_emotion_from_freeform(freeform_text):
     return None, None
 
 def can_use_today():
+    uid = session.get("uid")
+    if not uid:
+        return False
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    doc = db.collection("usage").document(uid).get()
+    if doc.exists:
+        return doc.to_dict().get("last_used_date") != today_str
     return True
 
 def record_usage_today():
-    return True
+    uid = session.get("uid")
+    if not uid:
+        return
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    db.collection("usage").document(uid).set({
+        "last_used_date": today_str
+    }, merge=True)
 
 def log_usage_to_firestore(uid, email, emotion, scene, quote, author, gpt_response=None, freeform=None):
     try:
@@ -199,6 +213,23 @@ def result():
         emotion = request.form.get("emotion")
         scene = request.form.get("scene")
         freeform = request.form.get("freeform", "")
+
+        # 🚫 自由入力がある場合、未課金ユーザーは1日1回制限
+        if freeform:
+            if not can_use_today():
+                results = [("※今日は自由入力での寄り添い名言は1回までです。\n\nでもご安心ください。\n\n感情やシーンを選べば、まだ他の名言を見ることができます🌱", "", "", "")]
+                session["selected_quotes"] = []
+                return render_template(
+                    "result.html",
+                    results=results,
+                    emotion=None,
+                    scene=None,
+                    used_today=True,
+                    expand=False,
+                    freeform=freeform
+                )
+            else:
+                record_usage_today()
 
         # 🔧 自由入力があり、emotion/sceneが空なら補完する
         if freeform and (not emotion or not scene):
@@ -294,6 +325,7 @@ def result():
         expand=request.args.get("expand", "false").lower() == "true",
         freeform=freeform
     )
+
 
     # 結果画面を表示
     return render_template(
