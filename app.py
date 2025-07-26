@@ -15,6 +15,7 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 from pytz import timezone
 from collections import Counter
+from flask import session
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
@@ -193,61 +194,128 @@ def result():
     if "uid" not in session:
         return redirect(url_for("login"))
 
+    # --- 初回POST or 継続GET ---
     if request.method == "POST":
         emotion = request.form.get("emotion")
         scene = request.form.get("scene")
         freeform = request.form.get("freeform", "")
-        session["last_freeform"] = freeform
 
-        if not emotion and not scene and freeform:
+        # 🔧 自由入力があり、emotion/sceneが空なら補完する
+        if freeform and (not emotion or not scene):
             guessed_emotion, guessed_scene = guess_scene_then_emotion_from_freeform(freeform)
-            emotion = guessed_emotion or emotion
-            scene = guessed_scene or scene
+            if not emotion:
+                emotion = guessed_emotion
+            if not scene:
+                scene = guessed_scene
 
+        prev_emotion = session.get("last_emotion")
+        prev_scene = session.get("last_scene")
+        prev_freeform = session.get("last_freeform", "")
+
+        if emotion != prev_emotion or scene != prev_scene or freeform != prev_freeform:
+            session["expand_count"] = 0
+            session.pop("first_quote", None)
+            session["selected_quotes"] = []
+
+        session["last_emotion"] = emotion
+        session["last_scene"] = scene
+        session["last_freeform"] = freeform
     else:
         emotion = session.get("last_emotion")
         scene = session.get("last_scene")
         freeform = session.get("last_freeform", "")
 
-    expand = request.args.get("expand", "false").lower() == "true"
+    # --- 拡張クリック処理 ---
+    if request.method == "GET" and request.args.get("expand", "false").lower() == "true":
+        session["expand_count"] = session.get("expand_count", 0) + 1
+    expand_count = session.get("expand_count", 0)
+    num_additional = expand_count * 3  # 毎回 +3件
+    total_count = 1 + num_additional   # 1件 + 拡張分
 
-    num_quotes = 5 if expand else 1
     records = sheet.get_all_records()
-
-    filtered = []
     if emotion:
         filtered = [r for r in records if r['感情 / Emotion'] == emotion]
     elif scene:
         filtered = [r for r in records if r['シーン / Scene'] == scene]
+    else:
+        filtered = []
+
+    results = []
 
     if filtered:
         random.shuffle(filtered)
-        selected = filtered[:num_quotes]
-        results = [
-            (
+
+        selected_quotes = session.get("selected_quotes", [])
+        selected_texts = [q[0] for q in selected_quotes]
+
+        # 重複除外
+        filtered = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in selected_texts]
+
+        # 追加分だけ取得
+        to_add = total_count - len(selected_quotes)
+        new_quotes = []
+        for r in filtered[:to_add]:
+            quote = (
                 r.get('名言（JP）/ Quote_JP', '該当なし'),
                 r.get('出典（JP）/ Author_JP', ''),
                 r.get('感情 / Emotion', ''),
                 r.get('シーン / Scene', '')
             )
-            for r in selected
-        ]
+            new_quotes.append(quote)
+
+        selected_quotes = new_quotes + selected_quotes
+        session["selected_quotes"] = selected_quotes
+        results = selected_quotes
+
+        # 初回のPOSTだけFirestore保存＋first_quote記録
+        if request.method == "POST" and results:
+            first = results[0]
+            session["first_quote"] = first
+            log_usage_to_firestore(
+                uid=session["uid"],
+                email=session["email"],
+                emotion=first[2],
+                scene=first[3],
+                quote=first[0],
+                author=first[1],
+                freeform=freeform
+            )
     else:
         results = [("その感情やシーンに合う名言がまだ登録されていません。", "", emotion or "", scene or "")]
+        session["selected_quotes"] = []
 
-    if request.method == "POST":
-        session["last_emotion"] = emotion
-        session["last_scene"] = scene
-        first = results[0]
-        log_usage_to_firestore(
-            uid=session["uid"],
-            email=session["email"],
-            emotion=first[2],
-            scene=first[3],
-            quote=first[0],
-            author=first[1],
-            freeform=freeform
-        )
+    used_today = not can_use_today()
+    return render_template(
+        "result.html",
+        results=results,
+        emotion=emotion,
+        scene=scene,
+        used_today=used_today,
+        expand=request.args.get("expand", "false").lower() == "true",
+        freeform=freeform
+    )
+
+    # 結果画面を表示
+    return render_template(
+        "result.html",
+        results=results,
+        emotion=emotion,
+        scene=scene,
+        used_today=used_today,
+        expand=request.args.get("expand", "false").lower() == "true",
+        freeform=freeform
+    )
+
+    used_today = not can_use_today()
+    return render_template(
+        "result.html",
+        results=results,
+        emotion=emotion,
+        scene=scene,
+        used_today=used_today,
+        expand=request.args.get("expand", "false").lower() == "true",
+        freeform=freeform
+    )
 
     used_today = not can_use_today()
     return render_template("result.html", results=results, emotion=emotion, scene=scene, used_today=used_today, expand=expand, freeform=freeform)
@@ -259,9 +327,30 @@ def gpt():
     if not can_use_today():
         return "※本日のGPT寄り添いはすでに使用済みです。"
 
+    # 3つの入力を受け取る（emotion, scene, freeform）
     emotion = request.args.get("emotion")
+    scene = request.args.get("scene")
+    freeform = request.args.get("freeform")
+
+    # emotion がない場合は scene や freeform から推定する
+    if not emotion and scene:
+        records = sheet.get_all_records()
+        matched = [r for r in records if r["シーン / Scene"] == scene]
+        if matched:
+            emotion = matched[0]["感情 / Emotion"]
+
+    if not emotion and freeform:
+        guessed_emotion, _ = guess_scene_then_emotion_from_freeform(freeform)
+        emotion = guessed_emotion
+
+    # まだ emotion が特定できない場合はエラー
+    if not emotion:
+        return "うまく感情を特定できませんでした。"
+
+    # GPT呼び出し
     gpt_output = generate_gpt_response(emotion)
 
+    # Firestoreへの保存処理
     logs_ref = db.collection("logs")\
         .where("uid", "==", session["uid"])\
         .where("emotion", "==", emotion)\
@@ -281,7 +370,7 @@ def gpt():
             uid=session["uid"],
             email=session["email"],
             emotion=emotion,
-            scene="",
+            scene=scene or "",
             quote="",
             author="",
             gpt_response=gpt_output
