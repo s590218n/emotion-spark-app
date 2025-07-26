@@ -143,13 +143,15 @@
   </style>
 </head>
 <body>
-  <h1 style="font-size: 22px; margin-bottom: 10px;">あなたの感情：「{{ emotion }}」</h1>
-  {% if scene %}
-    <div class="scene">シーン：「{{ scene }}」</div>
-  {% endif %}
-  {% if freeform %}
-    <div class="freeform">あなたのことば：「{{ freeform }}」</div>
-  {% endif %}
+  <h1 style="font-size: 22px; margin-bottom: 10px;">
+    {% if emotion %}
+      あなたの感情：「{{ emotion }}」
+    {% elif scene %}
+      あなたが選んだシーン：「{{ scene }}」に寄り添います
+    {% elif freeform %}
+      あなたの言葉から、気持ちに寄り添います
+    {% endif %}
+  </h1>
 
   {% for quote, author, _, _ in results %}
     {% if expand or loop.first %}
