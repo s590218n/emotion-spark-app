@@ -20,13 +20,23 @@ from flask import session
 # 環境読み込み
 env = os.environ.get("ENV", "local")
 
-# 各種パスを環境によって切り替える
+# 👇 ここで環境を判断（.env に ENV=local または ENV=render を書いておく）
+env = os.environ.get("ENV", "local")  # デフォルトは "local"
+
+# 👇 Firebase と GSpread のパスを環境ごとに自動で分岐
 if env == "local":
     firebase_json_path = os.environ.get("FIREBASE_JSON_PATH_LOCAL")
     gspread_json_path = os.environ.get("GSPREAD_JSON_PATH_LOCAL")
 else:
     firebase_json_path = os.environ.get("FIREBASE_JSON_PATH_RENDER")
     gspread_json_path = os.environ.get("GSPREAD_JSON_PATH_RENDER")
+
+# 🔒 セキュリティチェック：ファイルが存在しなければエラーで止める
+if not os.path.exists(firebase_json_path):
+    raise FileNotFoundError(f"🔥 FirebaseのJSONが見つかりません: {firebase_json_path}")
+
+if not os.path.exists(gspread_json_path):
+    raise FileNotFoundError(f"🔥 GSpreadのJSONが見つかりません: {gspread_json_path}")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
