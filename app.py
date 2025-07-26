@@ -213,7 +213,7 @@ def result():
         scene = request.form.get("scene")
         freeform = request.form.get("freeform", "").strip()
 
-        # 🚫 すでに使用済みなら、ここですぐ return（絶対にGPT呼ばせない）
+        # 🚫 自由入力があり、かつ本日すでに使用済み → APIなど一切呼ばずストップ
         if freeform and not can_use_today():
             results = [(
                 "※今日は自由入力での寄り添い名言は1回までです。\n\n"
@@ -222,6 +222,9 @@ def result():
                 "", "", ""
             )]
             session["selected_quotes"] = []
+            session["last_emotion"] = None
+            session["last_scene"] = None
+            session["last_freeform"] = freeform
             return render_template(
                 "result.html",
                 results=results,
@@ -232,7 +235,7 @@ def result():
                 freeform=freeform
             )
 
-        # ✅ 使用可能な人だけ処理継続（ここで初めてGPT推定を許可）
+        # ✅ 自由入力が初回使用OK → 使用記録＋推定
         if freeform and can_use_today():
             record_usage_today()
             if not emotion or not scene:
@@ -242,11 +245,10 @@ def result():
                 if not scene:
                     scene = guessed_scene
 
-        # --- 前回との違いをチェックしてリセット ---
+        # 🔁 前回との変化でセッションリセット
         prev_emotion = session.get("last_emotion")
         prev_scene = session.get("last_scene")
         prev_freeform = session.get("last_freeform", "")
-
         if emotion != prev_emotion or scene != prev_scene or freeform != prev_freeform:
             session["expand_count"] = 0
             session.pop("first_quote", None)
