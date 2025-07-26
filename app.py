@@ -234,6 +234,25 @@ def result():
 
         # ✅ 自由入力の初回使用：記録＋推定実行
         if freeform:
+            if not can_use_today():
+                results = [(
+                    "※今日は自由入力での寄り添い名言は1回までです。\n\n"
+                    "でもご安心ください。\n\n"
+                    "感情やシーンを選べば、まだ他の名言を見ることができます🌱",
+                    "", "", ""
+                )]
+                session["selected_quotes"] = []
+                return render_template(
+                    "result.html",
+                    results=results,
+                    emotion=None,
+                    scene=None,
+                    used_today=True,
+                    expand=False,
+                    freeform=freeform
+                )
+
+            # 🔵 ここだけが実行される：本当に使える人だけ
             record_usage_today()
             if not emotion or not scene:
                 guessed_emotion, guessed_scene = guess_scene_then_emotion_from_freeform(freeform)
