@@ -211,9 +211,9 @@ def result():
     if request.method == "POST":
         emotion = request.form.get("emotion")
         scene = request.form.get("scene")
-        freeform = request.form.get("freeform", "")
+        freeform = request.form.get("freeform", "").strip()
 
-        # 🚫 2回目以降の自由入力なら、GPT推定を止める
+        # 🚫 自由入力があり、かつ本日すでに使用済みの場合は即 return
         if freeform and not can_use_today():
             results = [(
                 "※今日は自由入力での寄り添い名言は1回までです。\n\n"
@@ -232,7 +232,7 @@ def result():
                 freeform=freeform
             )
 
-        # ✅ 1回目の自由入力だけ記録・推定
+        # ✅ 自由入力の初回使用：記録＋推定実行
         if freeform:
             record_usage_today()
             if not emotion or not scene:
@@ -242,6 +242,7 @@ def result():
                 if not scene:
                     scene = guessed_scene
 
+        # フォーム内容の変化があれば選択をリセット
         prev_emotion = session.get("last_emotion")
         prev_scene = session.get("last_scene")
         prev_freeform = session.get("last_freeform", "")
@@ -254,18 +255,21 @@ def result():
         session["last_emotion"] = emotion
         session["last_scene"] = scene
         session["last_freeform"] = freeform
+
     else:
+        # GETアクセス時：セッションから復元
         emotion = session.get("last_emotion")
         scene = session.get("last_scene")
         freeform = session.get("last_freeform", "")
 
-    # --- 拡張クリック処理 ---
+    # --- 拡張表示クリック処理 ---
     if request.method == "GET" and request.args.get("expand", "false").lower() == "true":
         session["expand_count"] = session.get("expand_count", 0) + 1
     expand_count = session.get("expand_count", 0)
-    num_additional = expand_count * 3  # 毎回 +3件
-    total_count = 1 + num_additional   # 1件 + 拡張分
+    num_additional = expand_count * 3
+    total_count = 1 + num_additional
 
+    # --- データ取得・フィルタ処理 ---
     records = sheet.get_all_records()
     if emotion:
         filtered = [r for r in records if r['感情 / Emotion'] == emotion]
@@ -278,14 +282,11 @@ def result():
 
     if filtered:
         random.shuffle(filtered)
-
         selected_quotes = session.get("selected_quotes", [])
         selected_texts = [q[0] for q in selected_quotes]
 
-        # 重複除外
         filtered = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in selected_texts]
 
-        # 追加分だけ取得
         to_add = total_count - len(selected_quotes)
         new_quotes = []
         for r in filtered[:to_add]:
@@ -301,7 +302,6 @@ def result():
         session["selected_quotes"] = selected_quotes
         results = selected_quotes
 
-        # 初回のPOSTだけFirestore保存＋first_quote記録
         if request.method == "POST" and results:
             first = results[0]
             session["first_quote"] = first
@@ -314,6 +314,7 @@ def result():
                 author=first[1],
                 freeform=freeform
             )
+
     else:
         results = [("その感情やシーンに合う名言がまだ登録されていません。", "", emotion or "", scene or "")]
         session["selected_quotes"] = []
@@ -328,32 +329,6 @@ def result():
         expand=request.args.get("expand", "false").lower() == "true",
         freeform=freeform
     )
-
-
-    # 結果画面を表示
-    return render_template(
-        "result.html",
-        results=results,
-        emotion=emotion,
-        scene=scene,
-        used_today=used_today,
-        expand=request.args.get("expand", "false").lower() == "true",
-        freeform=freeform
-    )
-
-    used_today = not can_use_today()
-    return render_template(
-        "result.html",
-        results=results,
-        emotion=emotion,
-        scene=scene,
-        used_today=used_today,
-        expand=request.args.get("expand", "false").lower() == "true",
-        freeform=freeform
-    )
-
-    used_today = not can_use_today()
-    return render_template("result.html", results=results, emotion=emotion, scene=scene, used_today=used_today, expand=expand, freeform=freeform)
 
 @app.route("/gpt")
 def gpt():
