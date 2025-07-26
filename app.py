@@ -315,6 +315,9 @@ def result():
         random.shuffle(filtered)
         selected_quotes = session.get("selected_quotes", [])
         selected_texts = [q[0] for q in selected_quotes]
+        # 最初の名言も除外（expand時に重複を防ぐ）
+        if "first_quote" in session:
+            selected_texts.append(session["first_quote"][0])
 
         filtered = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in selected_texts]
 
