@@ -215,16 +215,21 @@ def result():
 
         # 🚫 自由入力があり、かつ本日すでに使用済み → APIなど一切呼ばずストップ
         if freeform and not can_use_today():
+            # 🚫 今日の自由入力分はすでに使った → 名言履歴を完全にリセットして抜ける
+            session.pop("first_quote", None)
+            session["selected_quotes"] = []
+            session["expand_count"] = 0
+            session["last_emotion"] = None
+            session["last_scene"] = None
+            session["last_freeform"] = freeform
+
             results = [(
                 "※今日は自由入力での寄り添い名言は1回までです。\n\n"
                 "でもご安心ください。\n\n"
                 "感情やシーンを選べば、まだ他の名言を見ることができます🌱",
                 "", "", ""
             )]
-            session["selected_quotes"] = []
-            session["last_emotion"] = None
-            session["last_scene"] = None
-            session["last_freeform"] = freeform
+
             return render_template(
                 "result.html",
                 results=results,
