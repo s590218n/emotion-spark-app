@@ -302,6 +302,7 @@ def result():
 
     # --- データ取得・フィルタ処理 ---
     records = sheet.get_all_records()
+    first_quote = session.get("first_quote")
     if emotion:
         filtered = [r for r in records if r['感情 / Emotion'] == emotion]
     elif scene:
@@ -316,8 +317,8 @@ def result():
         selected_quotes = session.get("selected_quotes", [])
         selected_texts = [q[0] for q in selected_quotes]
         # 最初の名言も除外（expand時に重複を防ぐ）
-        if "first_quote" in session:
-            selected_texts.append(session["first_quote"][0])
+        if first_quote:
+            selected_texts.append(first_quote[0])  # ✅ 最初の名言の本文も除外対象に
 
         filtered = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in selected_texts]
 
