@@ -339,47 +339,46 @@ def result():
 def gpt():
     if "uid" not in session:
         return "未ログインです。ログインしてください。"
-    if not can_use_today():
-        return "※本日のGPT寄り添いはすでに使用済みです。"
 
-    # 3つの入力を受け取る（emotion, scene, freeform）
+    # 🚫 すでに使っていたら絶対に通さない
+    if not can_use_today():
+        return "※本日のGPT寄り添いはすでに使用済みです。また明日🌙"
+
+    # 入力取得
     emotion = request.args.get("emotion")
     scene = request.args.get("scene")
     freeform = request.args.get("freeform")
 
-    # emotion がない場合は scene や freeform から推定する
+    # 🔒 自由入力でのアクセスでなければ拒否（必要ならこの条件追加）
+    if not freeform:
+        return "自由入力からの寄り添いのみ許可されています。"
+
+    # 推定処理
     if not emotion and scene:
         records = sheet.get_all_records()
         matched = [r for r in records if r["シーン / Scene"] == scene]
         if matched:
             emotion = matched[0]["感情 / Emotion"]
-
     if not emotion and freeform:
         guessed_emotion, _ = guess_scene_then_emotion_from_freeform(freeform)
         emotion = guessed_emotion
-
-    # まだ emotion が特定できない場合はエラー
     if not emotion:
         return "うまく感情を特定できませんでした。"
 
-    # GPT呼び出し
+    # 🚀 GPT呼び出し（ここまで来て初めて実行）
     gpt_output = generate_gpt_response(emotion)
 
-    # Firestoreへの保存処理
+    # Firestore保存処理
     logs_ref = db.collection("logs")\
         .where("uid", "==", session["uid"])\
         .where("emotion", "==", emotion)\
         .order_by("timestamp", direction=firestore.Query.DESCENDING)\
         .limit(1)
-
     docs = logs_ref.stream()
     found = False
     for doc in docs:
-        doc_ref = db.collection("logs").document(doc.id)
-        doc_ref.update({"gpt_response": gpt_output})
+        db.collection("logs").document(doc.id).update({"gpt_response": gpt_output})
         found = True
-        print("✅ GPT追記に成功")
-
     if not found:
         log_usage_to_firestore(
             uid=session["uid"],
