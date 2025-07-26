@@ -232,27 +232,8 @@ def result():
                 freeform=freeform
             )
 
-        # ✅ 自由入力の初回使用：記録＋推定実行
-        if freeform:
-            if not can_use_today():
-                results = [(
-                    "※今日は自由入力での寄り添い名言は1回までです。\n\n"
-                    "でもご安心ください。\n\n"
-                    "感情やシーンを選べば、まだ他の名言を見ることができます🌱",
-                    "", "", ""
-                )]
-                session["selected_quotes"] = []
-                return render_template(
-                    "result.html",
-                    results=results,
-                    emotion=None,
-                    scene=None,
-                    used_today=True,
-                    expand=False,
-                    freeform=freeform
-                )
-
-            # 🔵 ここだけが実行される：本当に使える人だけ
+        # ✅ 自由入力の初回使用のみ、記録・推定
+        if freeform and can_use_today():
             record_usage_today()
             if not emotion or not scene:
                 guessed_emotion, guessed_scene = guess_scene_then_emotion_from_freeform(freeform)
@@ -261,7 +242,7 @@ def result():
                 if not scene:
                     scene = guessed_scene
 
-        # フォーム内容の変化があれば選択をリセット
+        # --- 前回との違いをチェックしてリセット ---
         prev_emotion = session.get("last_emotion")
         prev_scene = session.get("last_scene")
         prev_freeform = session.get("last_freeform", "")
@@ -322,17 +303,20 @@ def result():
         results = selected_quotes
 
         if request.method == "POST" and results:
-            first = results[0]
-            session["first_quote"] = first
-            log_usage_to_firestore(
-                uid=session["uid"],
-                email=session["email"],
-                emotion=first[2],
-                scene=first[3],
-                quote=first[0],
-                author=first[1],
-                freeform=freeform
-            )
+            if freeform and not can_use_today():
+                pass  # ログ記録しない
+            else:
+                first = results[0]
+                session["first_quote"] = first
+                log_usage_to_firestore(
+                    uid=session["uid"],
+                    email=session["email"],
+                    emotion=first[2],
+                    scene=first[3],
+                    quote=first[0],
+                    author=first[1],
+                    freeform=freeform
+                )
 
     else:
         results = [("その感情やシーンに合う名言がまだ登録されていません。", "", emotion or "", scene or "")]
