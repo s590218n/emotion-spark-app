@@ -215,9 +215,13 @@ def result():
         freeform = request.form.get("freeform", "")
 
         # 🚫 自由入力がある場合、未課金ユーザーは1日1回制限
-        if freeform:
-            if not can_use_today():
-                # ❗ここで即リターン。GPT分類やストック抽出させない。
+        if request.method == "POST":
+            emotion = request.form.get("emotion")
+            scene = request.form.get("scene")
+            freeform = request.form.get("freeform", "")
+
+            # 🚫 自由入力がある場合、未課金ユーザーは1日1回制限（最優先にチェック）
+            if freeform and not can_use_today():
                 results = [(
                     "※今日は自由入力での寄り添い名言は1回までです。\n\n"
                     "でもご安心ください。\n\n"
@@ -235,14 +239,15 @@ def result():
                     freeform=freeform
                 )
 
-            # ✅ 使用可能な場合のみ：初回使用記録＋分類実行
-            record_usage_today()
-            if not emotion or not scene:
-                guessed_emotion, guessed_scene = guess_scene_then_emotion_from_freeform(freeform)
-                if not emotion:
-                    emotion = guessed_emotion
-                if not scene:
-                    scene = guessed_scene
+            # ✅ 使用可能な場合：使用記録＋補完処理
+            if freeform:
+                record_usage_today()
+                if not emotion or not scene:
+                    guessed_emotion, guessed_scene = guess_scene_then_emotion_from_freeform(freeform)
+                    if not emotion:
+                        emotion = guessed_emotion
+                    if not scene:
+                        scene = guessed_scene
 
         # 🔧 自由入力があり、emotion/sceneが空なら補完する（ただし使用可能な場合のみ）
         if freeform and (not emotion or not scene):
