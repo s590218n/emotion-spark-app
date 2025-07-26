@@ -302,7 +302,8 @@ def result():
 
     # --- データ取得・フィルタ処理 ---
     records = sheet.get_all_records()
-    first_quote = session.get("first_quote")
+    first_quote = session.get("first_quote")  # ✅ 先頭で取得
+
     if emotion:
         filtered = [r for r in records if r['感情 / Emotion'] == emotion]
     elif scene:
@@ -316,12 +317,15 @@ def result():
         random.shuffle(filtered)
         selected_quotes = session.get("selected_quotes", [])
         selected_texts = [q[0] for q in selected_quotes]
-        # 最初の名言も除外（expand時に重複を防ぐ）
-        if first_quote:
-            selected_texts.append(first_quote[0])  # ✅ 最初の名言の本文も除外対象に
 
+        # ✅ 最初の名言の本文も除外対象に追加
+        if first_quote:
+            selected_texts.append(first_quote[0])
+
+        # ✅ 重複を除く
         filtered = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in selected_texts]
 
+        # --- 新規追加分だけ抽出 ---
         to_add = total_count - len(selected_quotes)
         new_quotes = []
         for r in filtered[:to_add]:
@@ -333,7 +337,8 @@ def result():
             )
             new_quotes.append(quote)
 
-        selected_quotes = new_quotes + selected_quotes
+        # ✅ すでに表示した名言の末尾に追加
+        selected_quotes.extend(new_quotes)
         session["selected_quotes"] = selected_quotes
         results = selected_quotes
 
