@@ -144,12 +144,12 @@
 </head>
 <body>
   <h1 style="font-size: 22px; margin-bottom: 10px;">
-    {% if emotion %}
+    {% if freeform %}
+      あなたの言葉から、気持ちに寄り添います
+    {% elif emotion %}
       あなたの感情：「{{ emotion }}」
     {% elif scene %}
       あなたが選んだシーン：「{{ scene }}」に寄り添います
-    {% elif freeform %}
-      あなたの言葉から、気持ちに寄り添います
     {% endif %}
   </h1>
 
