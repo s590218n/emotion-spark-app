@@ -162,7 +162,7 @@
     </div>
   {% endif %}
 
-  {% if results and results[0] %}
+  {% if results and results[0] and not results[0][0].startswith("※") %}
     {% set first = session.get("first_quote", results[0]) %}
     {% set first_quote = first[0] %}
     {% set first_author = first[1] %}
