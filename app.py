@@ -17,26 +17,24 @@ from pytz import timezone
 from collections import Counter
 from flask import session
 
-# 環境読み込み
+# .env 読み込み（ローカル用）
+load_dotenv()
+
+# 実行環境（local or render）
 env = os.environ.get("ENV", "local")
 
-# 👇 ここで環境を判断（.env に ENV=local または ENV=render を書いておく）
-env = os.environ.get("ENV", "local")  # デフォルトは "local"
-
-# 👇 Firebase と GSpread のパスを環境ごとに自動で分岐
+# パスの読み分け
 if env == "local":
     firebase_json_path = os.environ.get("FIREBASE_JSON_PATH_LOCAL")
     gspread_json_path = os.environ.get("GSPREAD_JSON_PATH_LOCAL")
 else:
+    # 🔥 Render上の環境変数（.envではなくDashboardで手動設定したもの）
     firebase_json_path = os.environ.get("FIREBASE_JSON_PATH_RENDER")
     gspread_json_path = os.environ.get("GSPREAD_JSON_PATH_RENDER")
 
-# 🔒 セキュリティチェック：ファイルが存在しなければエラーで止める
-if not os.path.exists(firebase_json_path):
-    raise FileNotFoundError(f"🔥 FirebaseのJSONが見つかりません: {firebase_json_path}")
-
-if not os.path.exists(gspread_json_path):
-    raise FileNotFoundError(f"🔥 GSpreadのJSONが見つかりません: {gspread_json_path}")
+# ファイル存在確認（ローカル開発用にだけ残してOK）
+if not firebase_json_path:
+    raise RuntimeError(f"Firebase JSON path is missing: {firebase_json_path}")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
@@ -59,8 +57,8 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 # Google Sheets API設定
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 # Google Sheets API設定
-if not os.path.exists(gspread_json_path):
-    gspread_json_path = "./gspread.json"  # 念のためローカル用に残してもOK
+# Renderでは存在確認せず、環境変数から受け取ったまま使用
+pass  # gspread_json_path は既に設定済み
 
 creds = ServiceAccountCredentials.from_json_keyfile_name(gspread_json_path, scope)
 client_gs = gspread.authorize(creds)
