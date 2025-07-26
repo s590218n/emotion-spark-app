@@ -213,7 +213,7 @@ def result():
         scene = request.form.get("scene")
         freeform = request.form.get("freeform", "").strip()
 
-        # 🚫 自由入力があり、かつ本日すでに使用済みの場合は即 return
+        # 🚫 すでに使用済みなら、ここですぐ return（絶対にGPT呼ばせない）
         if freeform and not can_use_today():
             results = [(
                 "※今日は自由入力での寄り添い名言は1回までです。\n\n"
@@ -232,7 +232,7 @@ def result():
                 freeform=freeform
             )
 
-        # ✅ 自由入力の初回使用のみ、記録・推定
+        # ✅ 使用可能な人だけ処理継続（ここで初めてGPT推定を許可）
         if freeform and can_use_today():
             record_usage_today()
             if not emotion or not scene:
