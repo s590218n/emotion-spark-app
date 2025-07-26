@@ -17,12 +17,25 @@ from pytz import timezone
 from collections import Counter
 from flask import session
 
+# 環境読み込み
+env = os.environ.get("ENV", "local")
+
+# 各種パスを環境によって切り替える
+if env == "local":
+    firebase_json_path = os.environ.get("FIREBASE_JSON_PATH_LOCAL")
+    gspread_json_path = os.environ.get("GSPREAD_JSON_PATH_LOCAL")
+else:
+    firebase_json_path = os.environ.get("FIREBASE_JSON_PATH_RENDER")
+    gspread_json_path = os.environ.get("GSPREAD_JSON_PATH_RENDER")
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 CORS(app)
 
 # Firebase Admin SDK
-firebase_json_path = os.environ.get("FIREBASE_JSON_PATH")
+if not os.path.exists(firebase_json_path):
+    firebase_json_path = "./firebase.json"  # 念のためローカル用に残してもOK
+
 cred = credentials.Certificate(firebase_json_path)
 firebase_admin.initialize_app(cred)
 
@@ -35,7 +48,10 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Google Sheets API設定
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-gspread_json_path = os.environ.get("GSPREAD_JSON_PATH")
+# Google Sheets API設定
+if not os.path.exists(gspread_json_path):
+    gspread_json_path = "./gspread.json"  # 念のためローカル用に残してもOK
+
 creds = ServiceAccountCredentials.from_json_keyfile_name(gspread_json_path, scope)
 client_gs = gspread.authorize(creds)
 spreadsheet = client_gs.open_by_url("https://docs.google.com/spreadsheets/d/1tZ36aRLuoGJDPjh1t1nt0SYouWOZYGnjEnDKNmOIHkI/edit?gid=0#gid=0")
