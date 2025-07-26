@@ -231,9 +231,10 @@ def result():
             else:
                 record_usage_today()
 
-        # 🔧 自由入力があり、emotion/sceneが空なら補完する
+        # 🔧 自由入力があり、emotion/sceneが空なら補完する（ただし使用可能な場合のみ）
         if freeform and (not emotion or not scene):
             if not can_use_today():
+                # 🔴 ここで早期リターン：絶対にGPTを呼ばせない
                 results = [("※今日は自由入力での寄り添い名言は1回までです。\n\nでもご安心ください。\n\n感情やシーンを選べば、まだ他の名言を見ることができます🌱", "", "", "")]
                 session["selected_quotes"] = []
                 used_today = True
@@ -246,12 +247,13 @@ def result():
                     expand=False,
                     freeform=freeform
                 )
-            else:
-                guessed_emotion, guessed_scene = guess_scene_then_emotion_from_freeform(freeform)
-                if not emotion:
-                    emotion = guessed_emotion
-                if not scene:
-                    scene = guessed_scene
+            
+            # 🔵 使用可能な場合のみGPT呼び出し
+            guessed_emotion, guessed_scene = guess_scene_then_emotion_from_freeform(freeform)
+            if not emotion:
+                emotion = guessed_emotion
+            if not scene:
+                scene = guessed_scene
 
         prev_emotion = session.get("last_emotion")
         prev_scene = session.get("last_scene")
