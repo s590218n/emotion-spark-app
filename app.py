@@ -85,12 +85,43 @@ def get_stock_quote(emotion=None, scene=None, expand=False):
         r = random.choice(filtered)
         return [(r['名言（JP）/ Quote_JP'], r['出典（JP）/ Author_JP'], r.get('感情 / Emotion', ''), r.get('シーン / Scene', ''))]
 
+def get_three_random_quotes(filtered, seen_texts):
+    seen_set = set(text.strip().lower() for text in seen_texts)
+    random.shuffle(filtered)
+
+    results = []
+    for r in filtered:
+        quote_text = r.get('名言（JP）/ Quote_JP', '').strip().lower()
+        if quote_text not in seen_set:
+            results.append((
+                r.get('名言（JP）/ Quote_JP', '該当なし'),
+                r.get('出典（JP）/ Author_JP', ''),
+                r.get('感情 / Emotion', ''),
+                r.get('シーン / Scene', '')
+            ))
+        if len(results) == 3:
+            break
+
+    return results
+
 def generate_gpt_response(emotion):
     prompt = f"""
 あなたは人の感情に寄り添い、やさしい名言とコメントをくれる賢者です。
 以下の感情に対応する名言と寄り添い文をください：
 感情：{emotion}
 """
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "あなたはメンタルケアの専門家であり、やさしく誠実な口調で答えます。"},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.9,
+        max_tokens=300
+    )
+    return response.choices[0].message.content
+
+def generate_gpt_response_from_prompt(prompt):
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -167,6 +198,10 @@ def guess_scene_then_emotion_from_freeform(freeform_text):
     return None, None
 
 def can_use_today():
+    # 🔧 一時的に制限をオフ（何度でも使えるようにする）
+    return True
+    # 本来のコード（あとで元に戻すこと）
+    """
     uid = session.get("uid")
     if not uid:
         return False
@@ -176,6 +211,7 @@ def can_use_today():
     if doc.exists:
         return doc.to_dict().get("last_used_date") != today_str
     return True
+    """
 
 def record_usage_today():
     uid = session.get("uid")
@@ -294,9 +330,23 @@ def result():
         scene = session.get("last_scene")
         freeform = session.get("last_freeform", "")
 
-    # --- 拡張表示クリック処理 ---
-    if request.method == "GET" and request.args.get("expand", "false").lower() == "true":
-        session["expand_count"] = session.get("expand_count", 0) + 1
+        # --- 拡張表示クリック処理 ---
+        if request.method == "GET" and request.args.get("expand", "false").lower() == "true":
+            # ←✅ filtered 定義がここに必要
+            records = sheet.get_all_records()
+            emotion = session.get("last_emotion")
+            scene = session.get("last_scene")
+
+            if emotion:
+                filtered = [r for r in records if r['感情 / Emotion'] == emotion]
+            elif scene:
+                filtered = [r for r in records if r['シーン / Scene'] == scene]
+            else:
+                filtered = []
+
+            seen_quotes = session.get("seen_quotes", [])
+            seen_texts = [q[0] for q in seen_quotes]
+            new_quotes = get_three_random_quotes(filtered, seen_texts)
 
     # --- データ取得・フィルタ処理 ---
     records = sheet.get_all_records()
@@ -357,35 +407,32 @@ def result():
                     new_quotes.append(quote)
 
             if new_quotes:
-                session["seen_quotes"] = new_quotes
+                session["seen_quotes"] = session.get("seen_quotes", []) + new_quotes
                 results = new_quotes
             else:
                 results = [("これ以上の名言は見つかりませんでした。", "", "", "")]
 
         else:
             # ✅ 初回表示（POSTなど）
-            first_r = new_candidates[0] if new_candidates else filtered[0]
-            first = (
-                first_r.get('名言（JP）/ Quote_JP', '該当なし'),
-                first_r.get('出典（JP）/ Author_JP', ''),
-                first_r.get('感情 / Emotion', ''),
-                first_r.get('シーン / Scene', '')
-            )
-            session["first_quote"] = first
-            session["seen_quotes"] = [first]
-            results = [first]
+            seen_quotes = session.get("seen_quotes", [])
+            seen_texts = [q[0] for q in seen_quotes]
+            initial_quotes = get_three_random_quotes(filtered, seen_texts)
 
+            session["seen_quotes"] = initial_quotes
+            results = initial_quotes
+
+            # 最初の3件をログ保存
             if request.method == "POST" and (not freeform or can_use_today()):
-                log_usage_to_firestore(
-                    uid=session["uid"],
-                    email=session["email"],
-                    emotion=first[2],
-                    scene=first[3],
-                    quote=first[0],
-                    author=first[1],
-                    freeform=freeform
-                )
-
+                for quote in initial_quotes:
+                    log_usage_to_firestore(
+                        uid=session["uid"],
+                        email=session["email"],
+                        emotion=quote[2],
+                        scene=quote[3],
+                        quote=quote[0],
+                        author=quote[1],
+                        freeform=freeform
+                    )
     else:
         # ⚠️ 候補がまったくないとき
         results = [("その感情やシーンに合う名言がまだ登録されていません。", "", emotion or "", scene or "")]
@@ -419,17 +466,26 @@ def result():
 
 @app.route("/gpt")
 def gpt():
-    if "uid" not in session:
-        return "未ログインです。ログインしてください。"
+    #if "uid" not in session:
+     #   return "未ログインです。ログインしてください。"
 
     if not can_use_today():
         return "※本日のGPT寄り添いはすでに使用済みです。また明日🌙"
 
-    emotion = request.args.get("emotion")
-    scene = request.args.get("scene")
-    freeform = request.args.get("freeform")
-    quote = request.args.get("quote")
-    author = request.args.get("author")
+    # ✅ 安全な取得（None防止）
+    emotion = request.args.get("emotion") or ""
+    scene = request.args.get("scene") or ""
+    freeform = request.args.get("freeform") or ""
+    quote = request.args.get("quote") or ""
+    author = request.args.get("author") or ""
+
+    # ✅ ログ出力でRender側の確認
+    print("▼ /gpt リクエスト")
+    print("quote:", quote)
+    print("author:", author)
+    print("emotion:", emotion)
+    print("scene:", scene)
+    print("freeform:", freeform)
 
     # 🚫 入力が何もなければ拒否
     if not (freeform or quote or emotion or scene):
@@ -449,7 +505,7 @@ def gpt():
     if not emotion:
         return "うまく感情を特定できませんでした。"
 
-    # GPTプロンプト生成（freeform > quote > scene > emotion）
+    # GPTプロンプト生成
     if freeform:
         prompt = f"この言葉を受け取った人に、優しく寄り添う言葉をかけてください：『{freeform}』"
     elif quote:
@@ -459,9 +515,13 @@ def gpt():
     else:
         prompt = f"このような感情を抱える人に、優しく寄り添う言葉をかけてください：「{emotion}」"
 
-    gpt_output = generate_gpt_response_from_prompt(prompt)
+    # ✅ GPT呼び出し with エラーハンドリング
+    try:
+        gpt_output = generate_gpt_response_from_prompt(prompt)
+    except Exception as e:
+        return f"⚠️ GPT呼び出し中にエラーが発生しました: {str(e)}"
 
-    # Firestore保存
+    # Firestore保存処理
     logs_ref = db.collection("logs")\
         .where("uid", "==", session["uid"])\
         .where("emotion", "==", emotion)\
@@ -477,9 +537,9 @@ def gpt():
             uid=session["uid"],
             email=session["email"],
             emotion=emotion,
-            scene=scene or "",
-            quote=quote or "",
-            author=author or "",
+            scene=scene,
+            quote=quote,
+            author=author,
             gpt_response=gpt_output
         )
 

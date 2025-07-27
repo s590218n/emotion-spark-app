@@ -167,7 +167,13 @@
       <div class="quote">「{{ quote }}」</div>
       <div class="author">── {{ author }}</div>
       {% if not used_today %}
-        <button onclick="getGPT('{{ quote|escapejs }}', '{{ author|escapejs }}', '{{ emotion|escapejs }}', '{{ scene|escapejs }}', {{ loop.index }})">
+        <button 
+          class="gpt-button"
+          data-quote="{{ quote }}"
+          data-author="{{ author }}"
+          data-emotion="{{ emotion }}"
+          data-scene="{{ scene }}"
+          data-index="{{ loop.index }}">
           もっと寄り添ってほしい
         </button>
         <div class="gpt-output" id="gpt-output-{{ loop.index }}"></div>
@@ -178,7 +184,7 @@
   {% endfor %}
 
   <div class="expand-link">
-    <a href="/result?expand=true">🔄 他の名言候補も見てみる</a>
+    <a href="/result?expand=true">🔄 他の名言候補も見てみる（さらに3件）</a>
   </div>
 
   <div class="back-button">
@@ -188,28 +194,34 @@
   <a class="history-link" href="/history">🕘 使用履歴を表示する</a>
 
   <script>
-    function getGPT(quote, author, emotion, scene, index) {
-      const div = document.getElementById(`gpt-output-${index}`);
-      if (!div) return;
+    window.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('.gpt-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const quote = button.getAttribute('data-quote');
+          const author = button.getAttribute('data-author');
+          const emotion = button.getAttribute('data-emotion');
+          const scene = button.getAttribute('data-scene');
+          const index = button.getAttribute('data-index');
 
-      let url = `/gpt?quote=${encodeURIComponent(quote)}&author=${encodeURIComponent(author)}`;
-      if (emotion) {
-        url += `&emotion=${encodeURIComponent(emotion)}`;
-      }
-      if (scene) {
-        url += `&scene=${encodeURIComponent(scene)}`;
-      }
+          const div = document.getElementById(`gpt-output-${index}`);
+          if (!div) return;
 
-      fetch(url)
-        .then(res => res.text())
-        .then(data => {
-          div.innerText = data;
-          div.style.display = 'block';
-        })
-        .catch(err => {
-          alert("GPTの呼び出し中にエラーが発生しました。" + err.message);
+          let url = `/gpt?quote=${encodeURIComponent(quote)}&author=${encodeURIComponent(author)}`;
+          if (emotion) url += `&emotion=${encodeURIComponent(emotion)}`;
+          if (scene) url += `&scene=${encodeURIComponent(scene)}`;
+
+          fetch(url)
+            .then(res => res.text())
+            .then(data => {
+              div.innerText = data;
+              div.style.display = 'block';
+            })
+            .catch(err => {
+              alert("GPTの呼び出し中にエラーが発生しました。" + err.message);
+            });
         });
-}
+      });
+    });
   </script>
 </body>
 </html>
