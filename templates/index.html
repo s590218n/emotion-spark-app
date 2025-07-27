@@ -42,7 +42,7 @@
 
     .emotion-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 14px;
       margin-bottom: 30px;
     }
@@ -57,6 +57,8 @@
       cursor: pointer;
       transition: 0.3s;
       position: relative;
+      white-space: normal;
+      min-height: 64px;
     }
 
     .emotion-btn:hover {
@@ -149,7 +151,7 @@
       display: flex;
       justify-content: center;
       gap: 12px;
-      z-index: 1000;
+      z-index: 9999;
     }
 
     .bottom-links a {
@@ -189,7 +191,6 @@
 
   <form action="/result" method="POST">
     <div class="emotion-grid">
-      <!-- 10感情ボタン -->
       {% for emotion, emoji, desc in [
         ("悲しみ", "😢", "心が沈んでいる、涙が出そうなとき"),
         ("不安", "😟", "先のことが心配、落ち着かないとき"),
@@ -241,5 +242,6 @@
     <a href="/favorites">⭐ お気に入り一覧</a>
   </div>
   {% endif %}
+
 </body>
 </html>
