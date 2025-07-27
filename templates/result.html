@@ -60,7 +60,7 @@
       background-color: #3367d6;
     }
 
-    #gpt-output {
+    .gpt-output {
       margin-top: 24px;
       white-space: pre-line;
       background-color: #eef5ff;
@@ -154,7 +154,7 @@
     <div class="freeform">あなたのことば：「{{ freeform }}」</div>
   {% endif %}
 
-    {% if results and results[0][0].startswith("※") %}
+  {% if results and results[0][0].startswith("※") %}
     <div class="card" style="border: 2px solid #f5c518; background-color: #fffbe7; margin-bottom: 30px;">
       <div style="font-size: 18px; line-height: 1.7; white-space: pre-line; color: #444;">
         {{ results[0][0] }}
@@ -162,43 +162,21 @@
     </div>
   {% endif %}
 
-  {% if results and results[0] and not results[0][0].startswith("※") %}
-    {% set first = session.get("first_quote", results[0]) %}
-    {% set first_quote = first[0] %}
-    {% set first_author = first[1] %}
-
+  {% for quote, author, _, _ in results %}
     <div class="card">
-      <div class="quote">「{{ first_quote }}」</div>
-      <div class="author">── {{ first_author }}</div>
-
+      <div class="quote">「{{ quote }}」</div>
+      <div class="author">── {{ author }}</div>
       {% if not used_today %}
-        <button onclick="getGPT()">もっと寄り添ってほしい</button>
-        <div id="gpt-output"></div>
+        <button onclick="getGPT('{{ quote }}')">もっと寄り添ってほしい</button>
+        <div class="gpt-output" id="gpt-output-{{ loop.index }}"></div>
       {% else %}
         <div class="note">※本日のGPT寄り添いはすでに使用済みです。また明日🌙</div>
       {% endif %}
     </div>
-  {% else %}
-    <p>名言が見つかりませんでした。</p>
-  {% endif %}
-
-  {% if expand and results|length > 1 %}
-    {% for quote, author, _, _ in results[1:] %}
-      <div class="card">
-        <div class="quote">「{{ quote }}」</div>
-        <div class="author">── {{ author }}</div>
-      </div>
-    {% endfor %}
-  {% endif %}
+  {% endfor %}
 
   <div class="expand-link">
-    {% if not expand %}
-      <a href="/result?expand=true">🔄 他の名言候補も見てみる</a>
-    {% else %}
-      <a href="/result">🔙 候補を閉じる</a>
-      <br><br>
-      <a href="/result?expand=true">🔄 さらに名言を読みたい</a>
-    {% endif %}
+    <a href="/result?expand=true">🔄 他の名言候補も見てみる</a>
   </div>
 
   <div class="back-button">
@@ -208,26 +186,18 @@
   <a class="history-link" href="/history">🕘 使用履歴を表示する</a>
 
   <script>
-    const emotion = {{ emotion|tojson }};
-    const scene = {{ scene|tojson }};
-    const freeform = {{ freeform|tojson }};
+    function getGPT(quote) {
+      const index = quote.slice(0, 10).replace(/\W/g, '');
+      const div = document.querySelector(`[id^=gpt-output]`);
+      if (!div) return;
 
-    function getGPT() {
-      let url = "/gpt?";
-      if (emotion) {
-        url += `emotion=${encodeURIComponent(emotion)}`;
-      } else if (scene) {
-        url += `scene=${encodeURIComponent(scene)}`;
-      } else if (freeform) {
-        url += `freeform=${encodeURIComponent(freeform)}`;
-      }
+      let url = `/gpt?quote=${encodeURIComponent(quote)}`;
 
       fetch(url)
         .then(res => res.text())
         .then(data => {
-          const gptDiv = document.getElementById('gpt-output');
-          gptDiv.innerText = data;
-          gptDiv.style.display = 'block';
+          div.innerText = data;
+          div.style.display = 'block';
         })
         .catch(err => {
           alert("GPTの呼び出し中にエラーが発生しました。" + err.message);

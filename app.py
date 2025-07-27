@@ -282,6 +282,7 @@ def result():
             session["expand_count"] = 0
             session.pop("first_quote", None)
             session["selected_quotes"] = []
+            session["seen_quotes"] = [] 
 
         session["last_emotion"] = emotion
         session["last_scene"] = scene
@@ -296,13 +297,12 @@ def result():
     # --- 拡張表示クリック処理 ---
     if request.method == "GET" and request.args.get("expand", "false").lower() == "true":
         session["expand_count"] = session.get("expand_count", 0) + 1
-    expand_count = session.get("expand_count", 0)
-    num_additional = expand_count * 3
-    total_count = 1 + num_additional
 
     # --- データ取得・フィルタ処理 ---
     records = sheet.get_all_records()
-    first_quote = session.get("first_quote")  # ✅ 先頭で取得
+    emotion = session.get("last_emotion")
+    scene = session.get("last_scene")
+    freeform = session.get("last_freeform", "")
 
     if emotion:
         filtered = [r for r in records if r['感情 / Emotion'] == emotion]
@@ -314,37 +314,84 @@ def result():
     results = []
 
     if filtered:
-        random.shuffle(filtered)
-        selected_quotes = session.get("selected_quotes", [])
-        selected_texts = [q[0] for q in selected_quotes]
+        # ✅ 表示済み名言リスト
+        seen_quotes = session.get("seen_quotes", [])
+        seen_texts = [q[0] for q in seen_quotes]
 
-        # ✅ 最初の名言の本文も除外対象に追加
-        if first_quote:
-            selected_texts.append(first_quote[0])
+        # ✅ 未表示の候補だけ抽出
+        new_candidates = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in seen_texts]
 
-        # ✅ 重複を除く
-        filtered = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in selected_texts]
+        if request.method == "GET" and request.args.get("expand", "false").lower() == "true":
+            # ✅ 拡張時：新たな3件（重複なし）を表示し、なければ補完
+            seen_quotes = session.get("seen_quotes", [])
+            seen_texts = [q[0] for q in seen_quotes]
+            new_candidates = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in seen_texts]
 
-        # --- 新規追加分だけ抽出 ---
-        to_add = total_count - len(selected_quotes)
-        new_quotes = []
-        for r in filtered[:to_add]:
-            quote = (
-                r.get('名言（JP）/ Quote_JP', '該当なし'),
-                r.get('出典（JP）/ Author_JP', ''),
-                r.get('感情 / Emotion', ''),
-                r.get('シーン / Scene', '')
+            new_quotes = []
+            for r in new_candidates[:3]:
+                quote = (
+                    r.get('名言（JP）/ Quote_JP', '該当なし'),
+                    r.get('出典（JP）/ Author_JP', ''),
+                    r.get('感情 / Emotion', ''),
+                    r.get('シーン / Scene', '')
+                )
+                new_quotes.append(quote)
+
+            # 🔁 補完（すでに出た名言＋今回の新名言両方を除外）
+            if len(new_quotes) < 3:
+                existing_texts = [q[0] for q in new_quotes]
+                all_exclude = seen_texts + existing_texts
+                backup_candidates = [
+                    r for r in filtered
+                    if r.get('名言（JP）/ Quote_JP', '') not in all_exclude
+                ]
+                for r in backup_candidates:
+                    if len(new_quotes) >= 3:
+                        break
+                    quote = (
+                        r.get('名言（JP）/ Quote_JP', '該当なし'),
+                        r.get('出典（JP）/ Author_JP', ''),
+                        r.get('感情 / Emotion', ''),
+                        r.get('シーン / Scene', '')
+                    )
+                    new_quotes.append(quote)
+
+            if new_quotes:
+                session["seen_quotes"] = new_quotes
+                results = new_quotes
+            else:
+                results = [("これ以上の名言は見つかりませんでした。", "", "", "")]
+
+        else:
+            # ✅ 初回表示（POSTなど）
+            first_r = new_candidates[0] if new_candidates else filtered[0]
+            first = (
+                first_r.get('名言（JP）/ Quote_JP', '該当なし'),
+                first_r.get('出典（JP）/ Author_JP', ''),
+                first_r.get('感情 / Emotion', ''),
+                first_r.get('シーン / Scene', '')
             )
-            new_quotes.append(quote)
+            session["first_quote"] = first
+            session["seen_quotes"] = [first]
+            results = [first]
 
-        # ✅ すでに表示した名言の末尾に追加
-        selected_quotes.extend(new_quotes)
-        session["selected_quotes"] = selected_quotes
-        results = selected_quotes
+            if request.method == "POST" and (not freeform or can_use_today()):
+                log_usage_to_firestore(
+                    uid=session["uid"],
+                    email=session["email"],
+                    emotion=first[2],
+                    scene=first[3],
+                    quote=first[0],
+                    author=first[1],
+                    freeform=freeform
+                )
 
-        if request.method == "POST" and results:
+    else:
+        # ⚠️ 候補がまったくないとき
+        results = [("その感情やシーンに合う名言がまだ登録されていません。", "", emotion or "", scene or "")]
+        if request.method == "POST":
             if freeform and not can_use_today():
-                pass  # ログ記録しない
+                pass
             else:
                 first = results[0]
                 session["first_quote"] = first
@@ -358,10 +405,7 @@ def result():
                     freeform=freeform
                 )
 
-    else:
-        results = [("その感情やシーンに合う名言がまだ登録されていません。", "", emotion or "", scene or "")]
-        session["selected_quotes"] = []
-
+    # ✅ 最後に return を「if」「else」の外に1つだけ書く
     used_today = not can_use_today()
     return render_template(
         "result.html",
@@ -466,4 +510,4 @@ def history():
     return render_template("history.html", records=log_data)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5050)
