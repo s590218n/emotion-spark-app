@@ -8,12 +8,13 @@
     body {
       font-family: sans-serif;
       font-size: 16px;
-      background-color: #f9f9f9;
+      background-color: #f0f4f8;
       text-align: center;
       padding: 40px 20px;
     }
 
     .card {
+      position: relative;
       background: #fff;
       padding: 24px;
       border-radius: 12px;
@@ -137,6 +138,20 @@
       color: #777;
       white-space: pre-line;
     }
+
+    .favorite-icon {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-size: 22px;
+      color: #ccc;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .favorite-icon:hover {
+      color: #ff6666;
+    }
   </style>
 </head>
 <body>
@@ -164,8 +179,18 @@
 
   {% for quote, author, emotion, scene in results %}
     <div class="card">
+      <span class="favorite-icon"
+        data-quote="{{ quote }}"
+        data-author="{{ author }}"
+        data-emotion="{{ emotion }}"
+        data-scene="{{ scene }}"
+        title="お気に入りに追加">
+        ♡
+      </span>
+
       <div class="quote">「{{ quote }}」</div>
       <div class="author">── {{ author }}</div>
+
       {% if not used_today %}
         <button 
           class="gpt-button"
@@ -188,7 +213,11 @@
   </div>
 
   <div class="back-button">
-    <a href="/">別の感情を試す</a>
+    <a href="/">トップページに戻る</a>
+  </div>
+
+  <div class="back-button">
+    <a href="/favorites">⭐️ お気に入り一覧を見る</a>
   </div>
 
   <a class="history-link" href="/history">🕘 使用履歴を表示する</a>
@@ -219,6 +248,33 @@
             .catch(err => {
               alert("GPTの呼び出し中にエラーが発生しました。" + err.message);
             });
+        });
+      });
+
+      document.querySelectorAll('.favorite-icon').forEach(icon => {
+        icon.addEventListener('click', () => {
+          const quote = icon.getAttribute('data-quote');
+          const author = icon.getAttribute('data-author');
+          const emotion = icon.getAttribute('data-emotion');
+          const scene = icon.getAttribute('data-scene');
+
+          fetch("/favorite", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quote, author, emotion, scene })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === "success") {
+              icon.innerText = "❤️";
+              icon.title = "お気に入りに追加済み";
+            } else {
+              alert("エラー：" + data.message);
+            }
+          })
+          .catch(err => {
+            alert("通信エラー：" + err.message);
+          });
         });
       });
     });

@@ -183,7 +183,7 @@ def guess_scene_then_emotion_from_freeform(freeform_text):
             parsed = json.loads(match.group())
             emotion = parsed.get("emotion")
             scene = parsed.get("scene")
-            valid_emotions = ["悲しみ", "怒り", "喜び", "不安", "孤独", "愛情", "希望"]
+            valid_emotions = ["悲しみ", "不安", "怒り", "孤独", "喜び", "愛情", "希望", "罪悪感", "焦り", "混乱"]
             valid_scenes = [
                 "夜にひとりでいるとき", "朝が来るのが怖いとき", "眠れない夜", "誰かに傷つけられたあと",
                 "自分を責めてしまうとき", "前に進みたいのに動けない", "誰にも話せないことがある",
@@ -570,6 +570,70 @@ def gpt():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+@app.route("/favorite", methods=["POST"])
+def favorite():
+    if "uid" not in session:
+        return jsonify({"status": "error", "message": "ログインしていません。"})
+
+    data = request.json
+    quote = data.get("quote")
+    author = data.get("author")
+    emotion = data.get("emotion")
+    scene = data.get("scene")
+
+    if not quote or not author:
+        return jsonify({"status": "error", "message": "名言または著者が不足しています。"})
+
+    try:
+        db.collection("favorites").add({
+            "uid": session["uid"],
+            "email": session.get("email", ""),
+            "quote": quote,
+            "author": author,
+            "emotion": emotion,
+            "scene": scene,
+            "timestamp": datetime.utcnow()
+        })
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+    
+@app.route("/delete_favorite/<doc_id>", methods=["POST"])
+def delete_favorite(doc_id):
+    if "uid" not in session:
+        return redirect(url_for("login"))
+
+    try:
+        db.collection("favorites").document(doc_id).delete()
+        return redirect(url_for("favorites"))
+    except Exception as e:
+        return f"削除中にエラーが発生しました: {e}", 500
+    
+@app.route("/favorites")
+def favorites():
+    if "uid" not in session:
+        return redirect(url_for("login"))
+
+    uid = session["uid"]
+    favorites_ref = db.collection("favorites").where("uid", "==", uid).order_by("timestamp", direction=firestore.Query.DESCENDING)
+    docs = favorites_ref.stream()
+
+    favorite_quotes = []
+    for doc in docs:
+        data = doc.to_dict()
+        data["id"] = doc.id
+        favorite_quotes.append({
+            "id": data["id"],
+            "quote": data.get("quote", ""),
+            "author": data.get("author", ""),
+            "emotion": data.get("emotion", ""),
+            "scene": data.get("scene", ""),
+            "timestamp": data.get("timestamp", "").astimezone(timezone("Asia/Tokyo")).strftime("%Y-%m-%d %H:%M")
+        })
+
+    return render_template("favorites.html", favorites=favorite_quotes)
+
 
 @app.route("/history")
 def history():

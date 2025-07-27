@@ -108,6 +108,28 @@
       margin: 40px auto;
       display: block;
     }
+
+    /* ✅ フローティングボタン */
+    .floating-top-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #007bff;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: background-color 0.3s;
+    }
+    .floating-top-button:hover {
+      background-color: #0056b3;
+    }
+
+    /* ✅ モバイル最適化 */
     @media (max-width: 480px) {
       .log-card {
         padding: 14px;
@@ -123,6 +145,9 @@
       }
       h1 {
         font-size: 20px;
+      }
+      select {
+        width: 100%;
       }
     }
   </style>
@@ -167,6 +192,7 @@
   <canvas id="emotionChart"></canvas>
 
   <a href="{{ url_for('index') }}" class="back-button">トップページへ戻る</a>
+  <a href="{{ url_for('index') }}" class="floating-top-button">トップページへ戻る</a>
 
   <script>
     async function toggleFavorite(id, el) {

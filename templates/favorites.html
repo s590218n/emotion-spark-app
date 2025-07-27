@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>お気に入り一覧</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      color: #333;
+    }
+
+    .nav-button {
+      display: inline-block;
+      margin-top: 10px;
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9em;
+    }
+
+    .quote-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .quote-card p {
+      margin: 8px 0;
+      line-height: 1.5;
+      color: #444;
+    }
+
+    .quote-card .meta {
+      font-size: 0.85em;
+      color: #888;
+    }
+
+    .delete-button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .delete-button:hover {
+      background-color: #c82333;
+    }
+
+    /* ✅ フローティングボタン（トップへ） */
+    .floating-top-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #007bff;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: background-color 0.3s;
+    }
+
+    .floating-top-button:hover {
+      background-color: #0056b3;
+    }
+
+    /* ✅ モバイル強化 */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+      .nav-button,
+      .delete-button {
+        font-size: 0.85em;
+        padding: 10px 16px;
+      }
+      .quote-card {
+        padding: 16px;
+      }
+      .floating-top-button {
+        font-size: 13px;
+        padding: 10px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⭐️ お気に入り名言</h1>
+    <a href="{{ url_for('index') }}" class="nav-button">⬅ トップに戻る</a>
+  </header>
+
+  {% if favorites %}
+    {% for item in favorites %}
+      <div class="quote-card">
+        <p>「{{ item.quote }}」</p>
+        <p>— {{ item.author }}</p>
+        <p class="meta">{{ item.emotion }} / {{ item.scene }}</p>
+        <p class="meta">{{ item.timestamp }}</p>
+
+        <form method="POST" action="{{ url_for('delete_favorite', doc_id=item.id) }}">
+          <button type="submit" class="delete-button" onclick="return confirm('この名言をお気に入りから削除しますか？')">
+            🗑 削除
+          </button>
+        </form>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>まだお気に入りはありません。</p>
+  {% endif %}
+
+  <!-- ✅ 右下に常時表示されるトップボタン -->
+  <a href="#top" class="floating-top-button">⬆ トップへ</a>
+</body>
+</html>
