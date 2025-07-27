@@ -431,11 +431,11 @@ def gpt():
     scene = request.args.get("scene")
     freeform = request.args.get("freeform")
 
-    # 🔒 自由入力でのアクセスでなければ拒否（必要ならこの条件追加）
-    if not freeform:
-        return "自由入力からの寄り添いのみ許可されています。"
+    # 🚫 入力が何もなければ拒否
+    if not (freeform or emotion or scene):
+        return "自由入力または感情・シーンのいずれかが必要です。"
 
-    # 推定処理
+    # 🔍 感情の推定（scene→emotion推定 or freeform→emotion推定）
     if not emotion and scene:
         records = sheet.get_all_records()
         matched = [r for r in records if r["シーン / Scene"] == scene]
@@ -447,10 +447,17 @@ def gpt():
     if not emotion:
         return "うまく感情を特定できませんでした。"
 
-    # 🚀 GPT呼び出し（ここまで来て初めて実行）
-    gpt_output = generate_gpt_response(emotion)
+    # 🚀 GPT呼び出し（freeformがあればそれを優先）
+    if freeform:
+        prompt = f"この言葉を受け取った人に、優しく寄り添う言葉をかけてください：『{freeform}』"
+    elif scene:
+        prompt = f"このようなシーンにいる人に、優しく寄り添う言葉をかけてください：「{scene}」"
+    else:
+        prompt = f"このような感情を抱える人に、優しく寄り添う言葉をかけてください：「{emotion}」"
 
-    # Firestore保存処理
+    gpt_output = generate_gpt_response_from_prompt(prompt)
+
+    # Firestore保存処理（同一感情の最新ログに結びつける）
     logs_ref = db.collection("logs")\
         .where("uid", "==", session["uid"])\
         .where("emotion", "==", emotion)\
