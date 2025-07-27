@@ -422,36 +422,38 @@ def gpt():
     if "uid" not in session:
         return "未ログインです。ログインしてください。"
 
-    # 🚫 すでに使っていたら絶対に通さない
     if not can_use_today():
         return "※本日のGPT寄り添いはすでに使用済みです。また明日🌙"
 
-    # 入力取得
     emotion = request.args.get("emotion")
     scene = request.args.get("scene")
     freeform = request.args.get("freeform")
-    quote = request.args.get("quote", "")
-    author = request.args.get("author", "")
+    quote = request.args.get("quote")
+    author = request.args.get("author")
 
     # 🚫 入力が何もなければ拒否
-    if not (freeform or emotion or scene):
-        return "自由入力または感情・シーンのいずれかが必要です。"
+    if not (freeform or quote or emotion or scene):
+        return "自由入力または名言・感情・シーンのいずれかが必要です。"
 
-    # 🔍 感情の推定（scene→emotion推定 or freeform→emotion推定）
+    # 感情の推定
     if not emotion and scene:
         records = sheet.get_all_records()
         matched = [r for r in records if r["シーン / Scene"] == scene]
         if matched:
             emotion = matched[0]["感情 / Emotion"]
+
     if not emotion and freeform:
         guessed_emotion, _ = guess_scene_then_emotion_from_freeform(freeform)
         emotion = guessed_emotion
+
     if not emotion:
         return "うまく感情を特定できませんでした。"
 
-    # 🚀 GPT呼び出し（freeformがあればそれを優先）
+    # GPTプロンプト生成（freeform > quote > scene > emotion）
     if freeform:
         prompt = f"この言葉を受け取った人に、優しく寄り添う言葉をかけてください：『{freeform}』"
+    elif quote:
+        prompt = f"以下の名言を心に受け止めた人に、さらに寄り添うような一言を届けてください：『{quote}』（{author}）"
     elif scene:
         prompt = f"このようなシーンにいる人に、優しく寄り添う言葉をかけてください：「{scene}」"
     else:
@@ -459,7 +461,7 @@ def gpt():
 
     gpt_output = generate_gpt_response_from_prompt(prompt)
 
-    # Firestore保存処理（同一感情の最新ログに結びつける）
+    # Firestore保存
     logs_ref = db.collection("logs")\
         .where("uid", "==", session["uid"])\
         .where("emotion", "==", emotion)\
@@ -476,8 +478,8 @@ def gpt():
             email=session["email"],
             emotion=emotion,
             scene=scene or "",
-            quote = request.args.get("quote", ""),
-            author=author,
+            quote=quote or "",
+            author=author or "",
             gpt_response=gpt_output
         )
 
