@@ -167,7 +167,7 @@
       <div class="quote">「{{ quote }}」</div>
       <div class="author">── {{ author }}</div>
       {% if not used_today %}
-        <button onclick="getGPT('{{ quote }}', '{{ author }}', '{{ emotion }}', '{{ scene }}', {{ loop.index }})">
+        <button onclick="getGPT('{{ quote|escapejs }}', '{{ author|escapejs }}', '{{ emotion|escapejs }}', '{{ scene|escapejs }}', {{ loop.index }})">
           もっと寄り添ってほしい
         </button>
         <div class="gpt-output" id="gpt-output-{{ loop.index }}"></div>
