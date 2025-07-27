@@ -430,6 +430,8 @@ def gpt():
     emotion = request.args.get("emotion")
     scene = request.args.get("scene")
     freeform = request.args.get("freeform")
+    quote = request.args.get("quote", "")
+    author = request.args.get("author", "")
 
     # 🚫 入力が何もなければ拒否
     if not (freeform or emotion or scene):
@@ -474,8 +476,8 @@ def gpt():
             email=session["email"],
             emotion=emotion,
             scene=scene or "",
-            quote="",
-            author="",
+            quote = request.args.get("quote", ""),
+            author=author,
             gpt_response=gpt_output
         )
 

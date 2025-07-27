@@ -162,12 +162,14 @@
     </div>
   {% endif %}
 
-  {% for quote, author, _, _ in results %}
+  {% for quote, author, emotion, scene in results %}
     <div class="card">
       <div class="quote">「{{ quote }}」</div>
       <div class="author">── {{ author }}</div>
       {% if not used_today %}
-        <button onclick="getGPT('{{ quote }}')">もっと寄り添ってほしい</button>
+        <button onclick="getGPT('{{ quote }}', '{{ author }}', '{{ emotion }}', '{{ scene }}', {{ loop.index }})">
+          もっと寄り添ってほしい
+        </button>
         <div class="gpt-output" id="gpt-output-{{ loop.index }}"></div>
       {% else %}
         <div class="note">※本日のGPT寄り添いはすでに使用済みです。また明日🌙</div>
@@ -186,12 +188,17 @@
   <a class="history-link" href="/history">🕘 使用履歴を表示する</a>
 
   <script>
-    function getGPT(quote) {
-      const index = quote.slice(0, 10).replace(/\W/g, '');
-      const div = document.querySelector(`[id^=gpt-output]`);
+    function getGPT(quote, author, emotion, scene, index) {
+      const div = document.getElementById(`gpt-output-${index}`);
       if (!div) return;
 
-      let url = `/gpt?quote=${encodeURIComponent(quote)}`;
+      let url = `/gpt?quote=${encodeURIComponent(quote)}&author=${encodeURIComponent(author)}`;
+      if (emotion) {
+        url += `&emotion=${encodeURIComponent(emotion)}`;
+      }
+      if (scene) {
+        url += `&scene=${encodeURIComponent(scene)}`;
+      }
 
       fetch(url)
         .then(res => res.text())
@@ -202,7 +209,7 @@
         .catch(err => {
           alert("GPTの呼び出し中にエラーが発生しました。" + err.message);
         });
-    }
+}
   </script>
 </body>
 </html>
