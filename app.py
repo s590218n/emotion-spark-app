@@ -207,9 +207,15 @@ def can_use_today():
         return False
 
     today_str = datetime.now().strftime("%Y-%m-%d")
-    doc = db.collection("usage").document(uid).get()
+    doc_ref = db.collection("usage").document(uid)
+    doc = doc_ref.get()
+
     if doc.exists:
-        return doc.to_dict().get("last_used_date") != today_str
+        data = doc.to_dict()
+        if data.get("last_used_date") == today_str:
+            return data.get("daily_gpt_count", 0) < 3
+        else:
+            return True  # 新しい日なのでOK
     return True
     """
 
@@ -217,9 +223,23 @@ def record_usage_today():
     uid = session.get("uid")
     if not uid:
         return
+
     today_str = datetime.now().strftime("%Y-%m-%d")
-    db.collection("usage").document(uid).set({
-        "last_used_date": today_str
+    doc_ref = db.collection("usage").document(uid)
+    doc = doc_ref.get()
+
+    if doc.exists:
+        data = doc.to_dict()
+        if data.get("last_used_date") == today_str:
+            new_count = data.get("daily_gpt_count", 0) + 1
+        else:
+            new_count = 1
+    else:
+        new_count = 1
+
+    doc_ref.set({
+        "last_used_date": today_str,
+        "daily_gpt_count": new_count
     }, merge=True)
 
 def log_usage_to_firestore(uid, email, emotion, scene, quote, author, gpt_response=None, freeform=None):
