@@ -5,245 +5,600 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Emotions Spark</title>
   <style>
-    :root {
-      --main-bg: #f0f4f8;
-      --card-bg: #ffffff;
-      --primary: #007bff;
-      --primary-hover: #0056b3;
-      --secondary: #4CAF50;
-      --secondary-hover: #45a049;
-      --font-main: 'Helvetica Neue', sans-serif;
-    }
+:root {
+  --bg-dark: #121212;
+  --main-bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --primary: #007bff;
+  --primary-hover: #0056b3;
+  --secondary: #4CAF50;
+  --secondary-hover: #45a049;
+  --font-main: 'Zen Maru Gothic', 'Noto Sans JP', 'Hiragino Sans', 'YuGothic', sans-serif;
+}
 
-    * {
-      box-sizing: border-box;
-    }
+body.dark-theme {
+  --main-bg: #121212;
+  --card-bg: #1e1e1e;
+  --primary: #3399ff;
+  --primary-hover: #1976d2;
+  --secondary: #66bb6a;
+  --secondary-hover: #4caf50;
+  font-family: var(--font-main);
+  color: #f0f0f0;
+}
 
-    body {
-      font-family: var(--font-main);
-      margin: 0;
-      padding: 0;
-      background-color: var(--main-bg);
-      color: #333;
-      line-height: 1.6;
-    }
+body.dark-theme .emotion-btn {
+  color: #f0f0f0;
+  background-color: #1e1e1e;
+  border-color: #444;
+}
 
-    h1 {
-      text-align: center;
-      margin: 40px 20px 20px;
-      font-size: 24px;
-    }
+body.dark-theme .emotion-btn:hover {
+  background-color: #2a2a2a;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.06);
+}
 
-    form {
-      padding: 20px;
-      max-width: 720px;
-      margin: auto;
-      padding-bottom: 180px;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    .emotion-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 14px;
-      margin-bottom: 30px;
-    }
+body {
+  font-family: var(--font-main);
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  color: #333;
+  line-height: 1.6;
+  animation: fadeIn 0.7s ease-in;
+}
 
-    .emotion-btn {
-      background-color: var(--card-bg);
-      border: 2px solid #ddd;
-      border-radius: 10px;
-      padding: 14px 10px;
-      font-size: 14px;
-      text-align: center;
-      cursor: pointer;
-      transition: 0.3s;
-      position: relative;
-      white-space: normal;
-      min-height: 64px;
-      color: #333;
-    }
+h1 {
+  text-align: center;
+  margin: 40px 20px 20px;
+  font-size: 24px;
+  animation: slideInDown 0.6s ease-out;
+}
 
-    .emotion-btn:hover {
-      background-color: #e6f0ff;
-    }
+form {
+  padding: 20px;
+  max-width: 720px;
+  margin: auto;
+  padding-bottom: 180px;
+}
 
-    .tooltip {
-      visibility: hidden;
-      background-color: #444;
-      color: #fff;
-      border-radius: 6px;
-      padding: 6px;
-      font-size: 12px;
-      position: absolute;
-      bottom: 120%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      width: max-content;
-      max-width: 160px;
-      white-space: normal;
-    }
+.emotion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 14px;
+  margin-bottom: 30px;
+}
 
-    .emotion-btn:hover .tooltip {
-      visibility: visible;
-      opacity: 1;
-    }
+.emotion-btn span.emoji {
+  display: block;
+  font-size: 1.5em;
+  margin-bottom: 4px;
+}
 
-    .scene-select {
-      margin-bottom: 20px;
-    }
+.emotion-btn {
+  background-color: var(--card-bg);
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin: 8px 10px;
+  font-size: 1.1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  white-space: normal;
+  min-height: 70px;
+  color: #333;
+  animation: fadeIn 0.5s ease-in;
+  box-shadow: 0 1px 4px rgba(255,255,255,0.05);
+  padding: 16px 12px;
+}
 
-    .scene-select select {
-      width: 100%;
-      padding: 12px;
-      font-size: 15px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      background: #fff;
-    }
+.emotion-btn:hover {
+  transform: translateY(-2px) scale(1.01);
+  background-color: #2a2a2a; /* ダークテーマ用 */
+  box-shadow: 0 0 10px rgba(255,255,255,0.08);
+}
 
-    .submit-button {
-      margin: 15px 0;
-      padding: 12px 20px;
-      font-size: 15px;
-      border: none;
-      border-radius: 8px;
-      background-color: var(--primary);
-      color: #fff;
-      cursor: pointer;
-      width: 100%;
-      max-width: 400px;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-    }
+/* Tooltip */
+.tooltip {
+  visibility: hidden;
+  background-color: #444;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 12px;
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  width: max-content;
+  max-width: 160px;
+  white-space: normal;
+  z-index: 999;
+}
 
-    .submit-button:hover {
-      background-color: var(--primary-hover);
-    }
+.emotion-btn:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
 
-    .freeform-block {
-      margin-top: 30px;
-    }
+/* Scene Select */
+.scene-select {
+  margin-bottom: 20px;
+}
 
-    .freeform-block label {
-      font-weight: bold;
-      margin-bottom: 8px;
-      display: block;
-    }
+.scene-select select {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+}
 
-    .freeform-block textarea {
-      width: 100%;
-      padding: 12px;
-      font-size: 14px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      resize: vertical;
-      min-height: 90px;
-    }
+/* Submit Button */
+.submit-button {
+  margin: 15px 0;
+  padding: 16px 24px;
+  font-size: 16px;
+  border: none;
+  border-radius: 14px;
+  background-color: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  max-width: 400px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  transition: background-color 0.2s, transform 0.2s;
+  animation: fadeIn 0.7s ease-in;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+}
 
-    .bottom-links {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background: #fff;
-      padding: 10px 0;
-      border-top: 1px solid #ccc;
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      z-index: 9999;
-    }
+.submit-button:hover {
+  background-color: #3399ff;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
 
-    .bottom-links a {
-      padding: 10px 16px;
-      border-radius: 6px;
-      background-color: var(--secondary);
-      color: #fff;
-      text-decoration: none;
-      font-size: 14px;
-      transition: 0.3s;
-    }
+/* Freeform Input */
+.freeform-block {
+  margin-top: 40px;
+}
 
-    .bottom-links a:hover {
-      background-color: var(--secondary-hover);
-    }
+.freeform-block label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+}
 
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 20px;
-        margin-top: 30px;
-      }
+.freeform-block textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  min-height: 90px;
+}
 
-      .tooltip {
-        font-size: 11px;
-      }
+/* Bottom Links */
+.bottom-links {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: none;
+  padding: 0;
+  border-top: none;
+  position: static; /* ← ここが重要 */
+  text-align: center;
+}
 
-      .submit-button {
-        font-size: 14px;
-        padding: 10px;
-      }
-    }
-  </style>
+.bottom-links a {
+  min-width: 160px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background-color: #292f39;
+  color: #eee;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.bottom-links a:hover {
+  background-color: #3a404c;
+}
+
+/* Quote Cards */
+.quote-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 30px auto;
+  max-width: 680px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  animation: fadeInUp 0.6s ease-in-out;
+  text-align: center;
+}
+
+.quote-card p {
+  margin: 8px 0;
+  line-height: 1.6;
+  color: #eee;
+}
+
+.quote-card .meta {
+  font-size: 0.85em;
+  color: #999;
+  margin-top: 6px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  h1 {
+    font-size: 20px;
+    margin-top: 30px;
+  }
+
+  .tooltip {
+    font-size: 11px;
+  }
+
+  .submit-button {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .bottom-links {
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 0;
+  }
+
+  .bottom-links a {
+    width: 90%;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .quote-card {
+    padding: 16px;
+    margin: 20px 10px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* GPT Output Box */
+.gpt-output {
+  display: none;
+  margin-top: 16px;
+  background-color: #1e1e1e;
+  color: #eee;
+  border-radius: 12px;
+  padding: 14px 18px;
+  position: relative;
+  max-width: 100%;
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-line;
+  animation: fadeInGPT 0.6s ease-in-out;
+  border-left: 5px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.gpt-output.show {
+  display: block;
+}
+
+/* Loading 表示 */
+.gpt-output.loading::before {
+  content: "🌙 AIがあなたの気持ちを考えています…";
+  color: #aaa;
+  font-style: italic;
+  display: block;
+  margin-bottom: 10px;
+}
+
+@keyframes fadeInGPT {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* タイプライター風カーソル */
+.gpt-output::after {
+  content: '|';
+  animation: blink-caret 1s step-end infinite;
+  color: #888;
+  margin-left: 2px;
+}
+
+@keyframes blink-caret {
+  from, to { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* ハート（お気に入り）アイコン */
+.favorite-icon {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  color: #bbb;
+}
+
+.favorite-icon.added {
+  animation: bounce-heart 0.6s ease;
+  color: #e91e63;
+}
+
+@keyframes bounce-heart {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.4); }
+  50%  { transform: scale(0.95); }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* GPTボタン（寄り添ってほしい） */
+.gpt-button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--secondary);
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.gpt-button:hover {
+  background-color: var(--secondary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive 調整 */
+@media (max-width: 480px) {
+  h1 {
+    font-size: 20px;
+    margin-top: 30px;
+  }
+
+  .tooltip {
+    font-size: 11px;
+  }
+
+  .submit-button {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .bottom-links a {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .gpt-output {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+
+  .favorite-icon {
+    font-size: 16px;
+    right: 14px;
+    top: 12px;
+  }
+}
+
+/* 汎用リンクの中央揃え調整 */
+.expand-link,
+.back-button,
+.history-link {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.back-button a,
+.expand-link a,
+.history-link a {
+  display: inline-block;
+  margin: 4px 0;
+  text-align: center;
+}
+
+/* 使用履歴リンク中央 */
+.history-link {
+  display: flex !important;
+  justify-content: center !important;
+  margin-top: 16px !important;
+}
+
+.history-link a {
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+/* ローディングメッセージやタイプライター演出 */
+.loading-message,
+.typewriter-text {
+  display: block;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.loading-message.show,
+.typewriter-text.show {
+  opacity: 1;
+}
+
+/* ページ遷移時のフェードイン */
+body.fade-start {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+body.fade-end {
+  opacity: 1;
+}
+
+.divider {
+  text-align: center;
+  color: #666;
+  font-size: 12px;
+  margin: 28px 0;
+  position: relative;
+  letter-spacing: 0.5px;
+}
+.divider::before,
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background-color: #333;
+}
+.divider::before {
+  left: 0;
+}
+.divider::after {
+  right: 0;
+}
+
+h1.title {
+  font-size: 24px;
+  font-weight: 700;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.subtitle {
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+  margin-top: -10px;
+  margin-bottom: 40px;
+  animation: fadeIn 1.2s ease-out;
+}
+</style>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="fade-start index-page dark-theme">
+  <div class="container">
+    <h1 class="title">あなたの心に近い気持ちを、そっと選んでください</h1>
+    <p class="subtitle">寄り添うことばが、きっとここにあります</p>
 
-  <h1>今の気持ちに近いものを選んでください</h1>
-
-  <form action="/result" method="POST">
-    <div class="emotion-grid">
-      {% for emotion, emoji, desc in [
-        ("悲しみ", "😢", "心が沈んでいる、涙が出そうなとき"),
-        ("不安", "😟", "先のことが心配、落ち着かないとき"),
-        ("怒り", "😠", "イライラしたり、理不尽さを感じたとき"),
-        ("孤独", "🫥", "誰にもわかってもらえないと感じるとき"),
-        ("喜び", "😊", "心があたたかく、うれしい気持ちのとき"),
-        ("愛情", "❤️", "誰かを大切に思ったり、思われたいとき"),
-        ("希望", "🌈", "前向きになりたい、未来に期待したいとき"),
-        ("罪悪感", "🙇‍♂️", "自分を責めたり、申し訳なく思うとき"),
-        ("焦り", "⏳", "時間や結果に追われるように感じるとき"),
-        ("混乱", "🔄", "考えがまとまらず、頭がいっぱいなとき")
-      ] %}
-      <button class="emotion-btn" type="submit" name="emotion" value="{{ emotion }}">
-        {{ emoji }} {{ emotion }}
-        <div class="tooltip">{{ desc }}</div>
-      </button>
-      {% endfor %}
-    </div>
-
-    <div class="scene-select">
-      <select name="scene">
-        <option value="">-- シーンを選んでください --</option>
-        {% for scene in [
-          "夜にひとりでいるとき", "朝が来るのが怖いとき", "眠れない夜", "誰かに傷つけられたあと",
-          "自分を責めてしまうとき", "前に進みたいのに動けない", "誰にも話せないことがある",
-          "なぜかわからないけど苦しい", "未来が怖いと感じたとき", "何かを失ったとき",
-          "嫌なことを思い出したとき", "誰かを思い出したとき", "気持ちを整理したいとき",
-          "とにかく救われたいとき", "夢が遠く感じるとき", "自分の価値がわからないとき",
-          "泣きたくても泣けないとき"
+    <form action="/result" method="POST">
+      <div class="emotion-grid">
+        {% for emotion, emoji, desc in [
+          ("悲しみ", "😢", "心が沈んでいる、涙が出そうなとき"),
+          ("不安", "😟", "先のことが心配、落ち着かないとき"),
+          ("怒り", "😠", "イライラしたり、理不尽さを感じたとき"),
+          ("孤独", "🫥", "誰にもわかってもらえないと感じるとき"),
+          ("喜び", "😊", "心があたたかく、うれしい気持ちのとき"),
+          ("愛情", "❤️", "誰かを大切に思ったり、思われたいとき"),
+          ("希望", "🌈", "前向きになりたい、未来に期待したいとき"),
+          ("罪悪感", "🙇‍♂️", "自分を責めたり、申し訳なく思うとき"),
+          ("焦り", "⏳", "時間や結果に追われるように感じるとき"),
+          ("混乱", "🔄", "考えがまとまらず、頭がいっぱいなとき")
         ] %}
-        <option value="{{ scene }}">{{ scene }}</option>
+          <button class="emotion-btn" type="submit" name="emotion" value="{{ emotion }}">
+            <span class="emoji">{{ emoji }}</span>
+            <span class="label">{{ emotion }}</span>
+            <div class="tooltip">{{ desc }}</div>
+          </button>
         {% endfor %}
-      </select>
+      </div>
+
+      <div class="divider">または</div>
+
+      <div class="scene-select">
+        <select name="scene">
+          <option value="">-- シーンを選んでください --</option>
+          {% for scene in [
+            "夜にひとりでいるとき", "朝が来るのが怖いとき", "眠れない夜", "誰かに傷つけられたあと",
+            "自分を責めてしまうとき", "前に進みたいのに動けない", "誰にも話せないことがある",
+            "なぜかわからないけど苦しい", "未来が怖いと感じたとき", "何かを失ったとき",
+            "嫌なことを思い出したとき", "誰かを思い出したとき", "気持ちを整理したいとき",
+            "とにかく救われたいとき", "夢が遠く感じるとき", "自分の価値がわからないとき",
+            "泣きたくても泣けないとき"
+          ] %}
+          <option value="{{ scene }}">{{ scene }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button class="submit-button" type="submit">このシーンで名言を見る</button>
+
+      <div class="divider">または</div>
+
+      <div class="freeform-block">
+        <label for="freeform">いまの気持ちや状況を自由に書いてもOK：</label>
+        <textarea id="freeform" name="freeform" placeholder="例：眠れない夜で、誰にも相談できない気持ちです"></textarea>
+      </div>
+
+      <button class="submit-button" type="submit">自由入力だけで名言を見る</button>
+    </form>
+
+    {% if session.uid %}
+    <div class="bottom-links">
+      <a href="/history">📖 あなたの記録</a>
+      <a href="/favorites">⭐ お気に入り一覧</a>
     </div>
-
-    <button class="submit-button" type="submit">このシーンで名言を見る</button>
-
-    <div class="freeform-block">
-      <label for="freeform">いまの気持ちや状況を自由に書いてもOK：</label>
-      <textarea id="freeform" name="freeform" placeholder="例：眠れない夜で、誰にも相談できない気持ちです"></textarea>
-    </div>
-
-    <button class="submit-button" type="submit">自由入力だけで名言を見る</button>
-  </form>
-
-  {% if session.uid %}
-  <div class="bottom-links">
-    <a href="/history">📖 あなたの記録</a>
-    <a href="/favorites">⭐ お気に入り一覧</a>
+    {% endif %}
   </div>
-  {% endif %}
-
+  <script>
+  window.addEventListener("DOMContentLoaded", () => {
+    document.body.classList.add("fade-end");
+  });
+</script>
 </body>
 </html>

@@ -87,22 +87,24 @@ def get_stock_quote(emotion=None, scene=None, expand=False):
 
 def get_three_random_quotes(filtered, seen_texts):
     seen_set = set(text.strip().lower() for text in seen_texts)
-    random.shuffle(filtered)
 
-    results = []
-    for r in filtered:
-        quote_text = r.get('名言（JP）/ Quote_JP', '').strip().lower()
-        if quote_text not in seen_set:
-            results.append((
-                r.get('名言（JP）/ Quote_JP', '該当なし'),
-                r.get('出典（JP）/ Author_JP', ''),
-                r.get('感情 / Emotion', ''),
-                r.get('シーン / Scene', '')
-            ))
-        if len(results) == 3:
-            break
+    # 重複しない候補を抽出
+    unique_candidates = [
+        (
+            r.get('名言（JP）/ Quote_JP', '該当なし'),
+            r.get('出典（JP）/ Author_JP', ''),
+            r.get('感情 / Emotion', ''),
+            r.get('シーン / Scene', '')
+        )
+        for r in filtered
+        if r.get('名言（JP）/ Quote_JP', '').strip().lower() not in seen_set
+    ]
 
-    return results
+    # 偏りを防ぐためにしっかりシャッフル
+    random.shuffle(unique_candidates)
+
+    # 最大3件を返す（なければ空リスト）
+    return unique_candidates[:3]
 
 def generate_gpt_response(emotion):
     prompt = f"""
@@ -392,39 +394,17 @@ def result():
         new_candidates = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in seen_texts]
 
         if request.method == "GET" and request.args.get("expand", "false").lower() == "true":
-            # ✅ 拡張時：新たな3件（重複なし）を表示し、なければ補完
             seen_quotes = session.get("seen_quotes", [])
             seen_texts = [q[0] for q in seen_quotes]
-            new_candidates = [r for r in filtered if r.get('名言（JP）/ Quote_JP', '') not in seen_texts]
+            
+            # 重複しない3件の名言を取得
+            new_quotes = get_three_random_quotes(filtered, seen_texts)
 
-            new_quotes = []
-            for r in new_candidates[:3]:
-                quote = (
-                    r.get('名言（JP）/ Quote_JP', '該当なし'),
-                    r.get('出典（JP）/ Author_JP', ''),
-                    r.get('感情 / Emotion', ''),
-                    r.get('シーン / Scene', '')
-                )
-                new_quotes.append(quote)
-
-            # 🔁 補完（すでに出た名言＋今回の新名言両方を除外）
-            if len(new_quotes) < 3:
-                existing_texts = [q[0] for q in new_quotes]
-                all_exclude = seen_texts + existing_texts
-                backup_candidates = [
-                    r for r in filtered
-                    if r.get('名言（JP）/ Quote_JP', '') not in all_exclude
-                ]
-                for r in backup_candidates:
-                    if len(new_quotes) >= 3:
-                        break
-                    quote = (
-                        r.get('名言（JP）/ Quote_JP', '該当なし'),
-                        r.get('出典（JP）/ Author_JP', ''),
-                        r.get('感情 / Emotion', ''),
-                        r.get('シーン / Scene', '')
-                    )
-                    new_quotes.append(quote)
+            if new_quotes:
+                session["seen_quotes"] = seen_quotes + new_quotes
+                results = new_quotes
+            else:
+                results = [("これ以上の名言は見つかりませんでした。", "", "", "")]
 
             if new_quotes:
                 session["seen_quotes"] = session.get("seen_quotes", []) + new_quotes

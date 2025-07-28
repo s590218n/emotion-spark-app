@@ -1,280 +1,304 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Emotions Spark - 結果</title>
   <style>
+    :root {
+      --bg-dark: #121212;
+      --main-bg: #f0f4f8;
+      --card-bg: #1e1e1e;
+      --primary: #3399ff;
+      --primary-hover: #1976d2;
+      --secondary: #66bb6a;
+      --secondary-hover: #4caf50;
+      --font-main: 'Zen Maru Gothic', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    }
+    * { box-sizing: border-box; }
     body {
-      font-family: sans-serif;
-      font-size: 16px;
-      background-color: #f0f4f8;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-dark);
+      color: #f0f0f0;
+      font-family: var(--font-main);
+      line-height: 1.7;
+      animation: fadeIn 0.7s ease-in;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    h1 {
+      font-size: 22px;
       text-align: center;
-      padding: 40px 20px;
-    }
-
-    .card {
-      position: relative;
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-      max-width: 600px;
-      width: 90%;
-      margin: 0 auto 30px auto;
-      animation: fadeIn 0.6s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .quote {
-      font-size: 20px;
-      font-weight: 500;
-      margin-bottom: 12px;
-      line-height: 1.6;
-      font-family: 'Noto Serif JP', serif;
-    }
-
-    .author {
-      color: #555;
-      font-size: 14px;
       margin-bottom: 20px;
+      animation: fadeInUp 0.5s ease-in-out;
     }
-
-    button {
-      margin-top: 10px;
-      padding: 14px 28px;
-      font-size: 16px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      width: 100%;
-      max-width: 320px;
-    }
-
-    button:hover {
-      background-color: #3367d6;
-    }
-
-    .gpt-output {
-      margin-top: 24px;
-      white-space: pre-line;
-      background-color: #eef5ff;
-      padding: 16px;
-      border-radius: 10px;
-      display: none;
-      font-size: 15px;
-      line-height: 1.6;
-    }
-
-    .note {
-      margin-top: 10px;
-      color: #888;
-      font-size: 14px;
-    }
-
-    .back-button {
-      margin-top: 30px;
-    }
-
-    .back-button a {
-      text-decoration: none;
-      background-color: #777;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-
-    .back-button a:hover {
-      background-color: #555;
-    }
-
-    .history-link {
-      display: block;
-      margin-top: 10px;
-      font-size: 14px;
-      color: #333;
-    }
-
-    .expand-link {
-      margin: 20px auto;
-      font-size: 14px;
-    }
-
-    .expand-link a {
-      color: #007bff;
-      text-decoration: none;
-    }
-
-    .expand-link a:hover {
-      text-decoration: underline;
-    }
-
-    .scene {
-      font-size: 15px;
-      margin-top: -8px;
-      margin-bottom: 20px;
-      color: #666;
-    }
-
-    hr {
-      margin: 30px auto;
-      width: 60%;
-      border: none;
-      border-top: 1px solid #ddd;
-    }
-
     .freeform {
-      margin-top: -8px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      color: #777;
-      white-space: pre-line;
+      text-align: center;
+      font-size: 15px;
+      margin-bottom: 24px;
+      color: #bbb;
+    }
+    .card {
+      background: linear-gradient(to bottom right, #1e1e1e, #2a2a2a);
+      color: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease;
+    }
+    .quote {
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .author {
+      text-align: center;
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
     }
 
     .favorite-icon {
       position: absolute;
-      top: 16px;
-      right: 20px;
-      font-size: 22px;
-      color: #ccc;
+      top: 14px;
+      right: 18px;
+      font-size: 18px;
       cursor: pointer;
-      transition: 0.3s;
+      color: #bbb;
+      transition: transform 0.2s ease;
+    }
+    .favorite-icon.added {
+      color: #e91e63;
+      animation: bounce-heart 0.6s ease;
+    }
+    .gpt-button {
+      background-color: var(--primary);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: block;
+      margin: 10px auto 0;
+      transition: background-color 0.2s ease;
+    }
+    .gpt-button:hover {
+      background-color: var(--secondary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3);
+    }
+    .gpt-output {
+      display: none;
+      margin-top: 14px;
+      background: #1a1a1a;
+      border-left: 4px solid var(--primary);
+      padding: 10px 14px 2.6rem;
+      border-radius: 10px;
+      font-size: 15px;
+      white-space: pre-line;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+    .gpt-output.show {
+      display: block;
+    }
+    .loading-message {
+      font-style: italic;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .loading-message.hidden {
+      display: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .note {
+      text-align: center;
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 12px;
+    }
+    .expand-link, .back-button, .history-link {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .expand-link a, .back-button a, .history-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .expand-link a:hover, .back-button a:hover, .history-link a:hover {
+      text-decoration: underline;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce-heart {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.3); }
+      50% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+    .blink {
+      animation: blinkFade 1.4s infinite ease-in-out;
     }
 
-    .favorite-icon:hover {
-      color: #ff6666;
+    @keyframes blinkFade {
+      0%, 100% {
+        opacity: 0.1;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+    .quote::before {
+      content: "\201C";
+      font-size: 1.4rem;
+      margin-right: 4px;
+      color: #ccc;
+    }
+    .quote::after {
+      content: "\201D";
+      font-size: 1.4rem;
+      margin-left: 4px;
+      color: #ccc;
+    }
+    .footer-card {
+      background: #1e1e1e;
+      padding: 12px 20px;
+      margin: 12px auto;
+      border-radius: 10px;
+      max-width: 360px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      text-align: center;
+      font-size: 15px;
+      transition: transform 0.2s ease;
+    }
+    .footer-card:hover {
+      transform: scale(1.03);
+    }
+    .footer-card a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .author-icon {
+      vertical-align: middle;
+      margin-right: 4px;
     }
   </style>
 </head>
-<body>
-  <h1 style="font-size: 22px; margin-bottom: 10px;">
-    {% if freeform %}
-      あなたの言葉から、気持ちに寄り添います
-    {% elif emotion %}
-      あなたの感情：「{{ emotion }}」
-    {% elif scene %}
-      あなたが選んだシーン：「{{ scene }}」に寄り添います
-    {% endif %}
-  </h1>
-
-  {% if freeform %}
-    <div class="freeform">あなたのことば：「{{ freeform }}」</div>
-  {% endif %}
-
-  {% if results and results[0][0].startswith("※") %}
-    <div class="card" style="border: 2px solid #f5c518; background-color: #fffbe7; margin-bottom: 30px;">
-      <div style="font-size: 18px; line-height: 1.7; white-space: pre-line; color: #444;">
-        {{ results[0][0] }}
-      </div>
-    </div>
-  {% endif %}
-
-  {% for quote, author, emotion, scene in results %}
-    <div class="card">
-      <span class="favorite-icon"
-        data-quote="{{ quote }}"
-        data-author="{{ author }}"
-        data-emotion="{{ emotion }}"
-        data-scene="{{ scene }}"
-        title="お気に入りに追加">
-        ♡
-      </span>
-
-      <div class="quote">「{{ quote }}」</div>
-      <div class="author">── {{ author }}</div>
-
-      {% if not used_today %}
-        <button 
-          class="gpt-button"
-          data-quote="{{ quote }}"
-          data-author="{{ author }}"
-          data-emotion="{{ emotion }}"
-          data-scene="{{ scene }}"
-          data-index="{{ loop.index }}">
-          もっと寄り添ってほしい
-        </button>
-        <div class="gpt-output" id="gpt-output-{{ loop.index }}"></div>
-      {% else %}
-        <div class="note">※本日のGPT寄り添いはすでに使用済みです。また明日🌙</div>
+<body class="fade-start">
+  <div class="container">
+    <h1>
+      {% if freeform %}
+        あなたの言葉から感じた心に寄り添います
+      {% elif emotion %}
+        感情「{{ emotion }}」に寄り添う言葉たち
+      {% elif scene %}
+        シーン「{{ scene }}」に寄り添う名言
       {% endif %}
-    </div>
-  {% endfor %}
+    </h1>
 
-  <div class="expand-link">
-    <a href="/result?expand=true">🔄 他の名言候補も見てみる（さらに3件）</a>
+    {% if freeform %}
+      <div class="freeform">入力された言葉：「{{ freeform }}」</div>
+    {% endif %}
+
+    {% for quote, author, emotion, scene in results %}
+      <div class="card">
+        <span class="favorite-icon"
+              data-quote="{{ quote }}"
+              data-author="{{ author }}"
+              data-emotion="{{ emotion }}"
+              data-scene="{{ scene }}"
+              title="お気に入りに追加">
+          ♡
+        </span>
+        <div class="quote">「{{ quote }}」</div>
+        <div class="author"><span class="author-icon">✍️</span> {{ author }}</div>
+
+        {% if not used_today %}
+          <button class="gpt-button"
+                  data-quote="{{ quote }}"
+                  data-author="{{ author }}"
+                  data-emotion="{{ emotion }}"
+                  data-scene="{{ scene }}"
+                  data-index="{{ loop.index }}">
+            もっと寄り添ってほしい
+          </button>
+          <div class="gpt-output" id="gpt-output-{{ loop.index }}">
+            <div class="loading-message blink">🌙 AIがあなたの気持ちを考えています…</div>
+            <div class="typewriter-text"></div>
+          </div>
+        {% else %}
+          <div class="note">※本日の寄り添いメッセージは使用済みです。また明日🌙</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <div class="footer-card"><a href="/result?expand=true">🔄 他の名言候補も見てみる</a></div>
+    <div class="footer-card"><a href="/">🏠 トップページに戻る</a></div>
+    <div class="footer-card"><a href="/favorites">⭐️ お気に入り一覧を見る</a></div>
+    <div class="footer-card"><a href="/history">🕘 使用履歴を表示する</a></div>
   </div>
-
-  <div class="back-button">
-    <a href="/">トップページに戻る</a>
-  </div>
-
-  <div class="back-button">
-    <a href="/favorites">⭐️ お気に入り一覧を見る</a>
-  </div>
-
-  <a class="history-link" href="/history">🕘 使用履歴を表示する</a>
 
   <script>
     window.addEventListener("DOMContentLoaded", () => {
+      document.body.classList.add("fade-end");
+
       document.querySelectorAll('.gpt-button').forEach(button => {
         button.addEventListener('click', () => {
-          const quote = button.getAttribute('data-quote');
-          const author = button.getAttribute('data-author');
-          const emotion = button.getAttribute('data-emotion');
-          const scene = button.getAttribute('data-scene');
-          const index = button.getAttribute('data-index');
+          const quote = button.dataset.quote;
+          const author = button.dataset.author;
+          const emotion = button.dataset.emotion;
+          const scene = button.dataset.scene;
+          const index = button.dataset.index;
+          const outputDiv = document.getElementById(`gpt-output-${index}`);
+          if (!outputDiv) return;
 
-          const div = document.getElementById(`gpt-output-${index}`);
-          if (!div) return;
+          const loading = outputDiv.querySelector(".loading-message");
+          const textBox = outputDiv.querySelector(".typewriter-text");
+          outputDiv.classList.add("show");
+          loading.classList.remove("hidden");
+          loading.classList.add("show");
+          textBox.classList.remove("show");
+          textBox.textContent = "";
 
-          let url = `/gpt?quote=${encodeURIComponent(quote)}&author=${encodeURIComponent(author)}`;
-          if (emotion) url += `&emotion=${encodeURIComponent(emotion)}`;
-          if (scene) url += `&scene=${encodeURIComponent(scene)}`;
+          const url = `/gpt?quote=${encodeURIComponent(quote)}&author=${encodeURIComponent(author)}`
+                        + (emotion ? `&emotion=${encodeURIComponent(emotion)}` : "")
+                        + (scene ? `&scene=${encodeURIComponent(scene)}` : "");
 
           fetch(url)
             .then(res => res.text())
             .then(data => {
-              div.innerText = data;
-              div.style.display = 'block';
+              setTimeout(() => {
+                loading.classList.add("hidden");
+                textBox.classList.add("show");
+                let i = 0;
+                const typeWriter = () => {
+                  if (i < data.length) {
+                    textBox.textContent += data.charAt(i++);
+                    setTimeout(typeWriter, 25);
+                  }
+                };
+                typeWriter();
+              }, 1000);
             })
-            .catch(err => {
-              alert("GPTの呼び出し中にエラーが発生しました。" + err.message);
+            .catch(() => {
+              loading.classList.add("hidden");
+              textBox.classList.add("show");
+              textBox.textContent = "エラーが発生しました。もう一度お試しください。";
             });
-        });
-      });
-
-      document.querySelectorAll('.favorite-icon').forEach(icon => {
-        icon.addEventListener('click', () => {
-          const quote = icon.getAttribute('data-quote');
-          const author = icon.getAttribute('data-author');
-          const emotion = icon.getAttribute('data-emotion');
-          const scene = icon.getAttribute('data-scene');
-
-          fetch("/favorite", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quote, author, emotion, scene })
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.status === "success") {
-              icon.innerText = "❤️";
-              icon.title = "お気に入りに追加済み";
-            } else {
-              alert("エラー：" + data.message);
-            }
-          })
-          .catch(err => {
-            alert("通信エラー：" + err.message);
-          });
         });
       });
     });
