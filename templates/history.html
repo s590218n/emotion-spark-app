@@ -6,155 +6,150 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f9f9f9;
-      padding: 20px;
-      margin: 0;
+    :root {
+      --main-bg: #f0f4f8;
+      --card-bg: #1e1e1e;
+      --primary: #3399ff;
+      --primary-hover: #1976d2;
+      --font-main: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
     }
+
+    body {
+      font-family: var(--font-main);
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #eee;
+      line-height: 1.7;
+    }
+
     h1 {
       text-align: center;
-      margin-bottom: 20px;
-      font-size: 22px;
-      color: #333;
+      margin: 40px 20px 20px;
+      font-size: 24px;
     }
+
     form {
-      max-width: 700px;
-      margin: 0 auto 30px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
+      padding: 0 20px;
+      max-width: 720px;
+      margin: auto;
+      text-align: center;
+      margin-bottom: 30px;
     }
-    select {
-      padding: 8px;
-      font-size: 14px;
+
+    select, button[type="submit"] {
+      margin: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
     }
+
+    button[type="submit"] {
+      background-color: var(--primary);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+      background-color: var(--primary-hover);
+    }
+
     .log-card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.08);
-      padding: 16px;
-      margin-bottom: 16px;
-      max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 720px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       position: relative;
     }
-    .log-card .date {
-      font-size: 14px;
-      color: #888;
-    }
-    .log-card .emotion {
-      font-size: 18px;
-      font-weight: bold;
-      margin-top: 6px;
-      color: #222;
-    }
-    .log-card .scene {
-      font-size: 16px;
-      color: #444;
-      margin-top: 4px;
-    }
-    .log-card .freeform {
-      font-size: 15px;
-      color: #555;
-      margin-top: 6px;
-    }
-    .log-card .quote {
-      margin-top: 10px;
-      font-size: 16px;
-      color: #333;
-      line-height: 1.6;
-    }
-    .log-card .gpt {
-      margin-top: 12px;
-      background: #eef5ff;
-      padding: 10px;
-      border-radius: 8px;
-      white-space: pre-line;
-      font-size: 14px;
-      line-height: 1.5;
-    }
+
     .favorite {
       position: absolute;
-      top: 12px;
-      right: 16px;
+      top: 16px;
+      right: 20px;
       font-size: 20px;
       cursor: pointer;
+      color: #888;
+      transition: transform 0.2s ease;
     }
+
     .favorite.active {
-      color: gold;
+      color: #f44336;
+      transform: scale(1.2);
     }
+
     .back-button {
       display: block;
-      width: 90%;
-      max-width: 240px;
-      margin: 30px auto 0;
-      padding: 12px 24px;
-      background-color: #007bff;
-      color: white;
+      margin: 60px auto 40px;
       text-align: center;
-      border-radius: 8px;
-      text-decoration: none;
       font-weight: bold;
-      font-size: 15px;
+      text-decoration: none;
+      background-color: var(--primary);
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 10px;
+      width: fit-content;
+      transition: background-color 0.3s ease;
     }
+
     .back-button:hover {
-      background-color: #0056b3;
-    }
-    canvas {
-      max-width: 800px;
-      margin: 40px auto;
-      display: block;
+      background-color: var(--primary-hover);
     }
 
-    /* ✅ フローティングボタン */
-    .floating-top-button {
+    .sticky-top-button {
       position: fixed;
-      bottom: 20px;
+      top: 20px;
       right: 20px;
-      background-color: #007bff;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 50px;
-      font-size: 14px;
+      background-color: var(--primary);
+      color: #fff;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 999;
       font-weight: bold;
-      text-decoration: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      z-index: 1000;
-      transition: background-color 0.3s;
-    }
-    .floating-top-button:hover {
-      background-color: #0056b3;
+      transition: background-color 0.3s ease;
     }
 
-    /* ✅ モバイル最適化 */
+    .sticky-top-button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    canvas {
+      display: block;
+      max-width: 720px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
     @media (max-width: 480px) {
-      .log-card {
-        padding: 14px;
-      }
-      .log-card .emotion {
-        font-size: 16px;
-      }
-      .log-card .scene,
-      .log-card .quote,
-      .log-card .gpt,
-      .log-card .freeform {
-        font-size: 14px;
-      }
       h1 {
         font-size: 20px;
       }
-      select {
+      .log-card {
+        margin: 16px 10px;
+        padding: 16px;
+      }
+      select, button[type="submit"] {
         width: 100%;
+        margin: 8px 0;
       }
     }
   </style>
 </head>
 <body>
+  <!-- スティッキートップへ戻るボタン -->
+  <button class="sticky-top-button" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">↑ トップへ</button>
+
   <h1>あなたの使用履歴</h1>
 
+  <!-- 絞り込みフォーム -->
   <form method="get" action="/history">
     <select name="emotion">
       <option value="">すべての感情</option>
@@ -171,7 +166,12 @@
     <button type="submit">絞り込み</button>
   </form>
 
+  <a href="{{ url_for('index') }}" class="back-button">トップページへ戻る</a>
+  <a href="{{ url_for('emotion_map') }}" class="back-button">🌌 感情マップを見る</a>
+
+  <!-- 履歴カード -->
   {% for record in records %}
+    {% if record.quote %}
     <div class="log-card">
       <div class="date">{{ record.timestamp }}</div>
       <div class="emotion">感情：{{ record.emotion }}</div>
@@ -181,26 +181,23 @@
       {% if record.freeform %}
         <div class="freeform">自由入力：「{{ record.freeform }}」</div>
       {% endif %}
-      {% if record.quote %}
-        <div class="quote">名言：「{{ record.quote }}」<br>── {{ record.author }}</div>
-      {% endif %}
+      <div class="quote">名言：「{{ record.quote }}」<br>── {{ record.author }}</div>
       <div class="gpt">{{ record.gpt_response or "（AIコメントなし）" }}</div>
       <div class="favorite {% if record.favorite %}active{% endif %}" onclick="toggleFavorite('{{ record.id }}', this)">★</div>
     </div>
+    {% endif %}
   {% endfor %}
 
+  <!-- 感情推移グラフ -->
   <canvas id="emotionChart"></canvas>
 
+  <!-- 最下部の戻るボタン -->
   <a href="{{ url_for('index') }}" class="back-button">トップページへ戻る</a>
-  <a href="{{ url_for('index') }}" class="floating-top-button">トップページへ戻る</a>
 
   <script>
     async function toggleFavorite(id, el) {
-      const isActive = el.classList.contains('active');
       el.classList.toggle('active');
-      const res = await fetch(`/toggle_favorite/${id}`, {
-        method: 'POST'
-      });
+      await fetch(`/toggle_favorite/${id}`, { method: 'POST' });
     }
 
     const ctx = document.getElementById('emotionChart').getContext('2d');

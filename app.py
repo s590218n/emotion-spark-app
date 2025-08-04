@@ -16,6 +16,9 @@ from google.oauth2 import service_account
 from pytz import timezone
 from collections import Counter
 from flask import session
+from flask import jsonify
+from datetime import datetime
+from flask import request
 
 # .env 読み込み（ローカル用）
 load_dotenv()
@@ -643,6 +646,39 @@ def history():
         })
 
     return render_template("history.html", records=log_data)
+
+@app.route('/remove_favorite', methods=['POST'])
+def remove_favorite():
+    data = request.get_json()
+    quote = data.get('quote')
+    author = data.get('author')
+
+    # 同じquote + author のドキュメントを削除
+    docs = db.collection('favorites').where('quote', '==', quote).where('author', '==', author).stream()
+    for doc in docs:
+        db.collection('favorites').document(doc.id).delete()
+
+    return jsonify({'status': 'removed'}), 200
+
+@app.route('/emotion-map')
+def emotion_map():
+    from collections import defaultdict
+    emotion_counts = defaultdict(int)
+
+    # Firestoreからログデータ取得（uidフィルタを追加して自分の履歴だけ）
+    uid = session.get("uid")
+    if not uid:
+        return redirect(url_for("login"))
+
+    docs = db.collection('logs').where("uid", "==", uid).stream()
+    for doc in docs:
+        data = doc.to_dict()
+        emotion = data.get("emotion")
+        if emotion:
+            emotion_counts[emotion] += 1
+
+    # テンプレートに辞書を渡す
+    return render_template("emotion_map.html", emotion_counts=dict(emotion_counts))
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5050)

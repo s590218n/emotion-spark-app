@@ -5,113 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>お気に入り一覧</title>
   <style>
-    body {
-      font-family: 'Helvetica Neue', sans-serif;
-      background-color: #f0f4f8;
-      margin: 0;
-      padding: 20px;
+    :root {
+      --bg-dark: #121212;
+      --main-bg: #f0f4f8;
+      --card-bg: #1e1e1e;
+      --primary: #3399ff;
+      --primary-hover: #1976d2;
+      --secondary: #66bb6a;
+      --secondary-hover: #4caf50;
+      --font-main: 'Zen Maru Gothic', 'Noto Sans JP', 'Hiragino Sans', 'YuGothic', sans-serif;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 30px;
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-main);
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-dark);
+      color: #f0f0f0;
+      line-height: 1.7;
+      animation: fadeIn 0.7s ease-in;
     }
 
     h1 {
-      font-size: 1.8em;
-      color: #333;
-    }
-
-    .nav-button {
-      display: inline-block;
-      margin-top: 10px;
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-size: 0.9em;
+      text-align: center;
+      margin: 40px 20px 20px;
+      font-size: 24px;
+      animation: slideInDown 0.6s ease-out;
     }
 
     .quote-card {
-      background: #ffffff;
+      background: var(--card-bg);
       border-radius: 16px;
       padding: 20px;
-      margin-bottom: 20px;
+      margin: 30px auto;
+      max-width: 680px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      animation: fadeInUp 0.6s ease-in-out;
+      text-align: center;
+      position: relative;
     }
 
     .quote-card p {
       margin: 8px 0;
-      line-height: 1.5;
-      color: #444;
+      line-height: 1.6;
+      color: #eee;
     }
 
     .quote-card .meta {
       font-size: 0.85em;
+      color: #999;
+      margin-top: 6px;
+    }
+
+    .favorite-icon {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-size: 22px;
+      cursor: pointer;
       color: #888;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .favorite-icon.added {
+      color: #ff4081;
+      animation: bounce-heart 0.6s ease;
+      text-shadow: 0 0 8px rgba(255,64,129,0.5);
+    }
+
+    @keyframes bounce-heart {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.4); }
+      50% { transform: scale(0.95); }
+      70% { transform: scale(1.2); }
+      100% { transform: scale(1); }
     }
 
     .delete-button {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-size: 0.9em;
+      background-color: transparent;
+      color: #ccc;
+      border: 1px solid #555;
+      padding: 6px 10px;
+      border-radius: 8px;
       cursor: pointer;
       margin-top: 10px;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .delete-button:hover {
-      background-color: #c82333;
+      background-color: #ff4444;
+      color: #fff;
     }
 
-    /* ✅ フローティングボタン（トップへ） */
+    .nav-button {
+      display: block;
+      margin: 10px auto 20px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
     .floating-top-button {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background-color: #007bff;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 50px;
-      font-size: 14px;
-      font-weight: bold;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-decoration: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      z-index: 1000;
-      transition: background-color 0.3s;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: background-color 0.3s ease;
     }
 
     .floating-top-button:hover {
-      background-color: #0056b3;
+      background: var(--primary-hover);
     }
 
-    /* ✅ モバイル強化 */
-    @media (max-width: 600px) {
-      body {
-        padding: 15px;
-      }
-      h1 {
-        font-size: 1.5em;
-      }
-      .nav-button,
-      .delete-button {
-        font-size: 0.85em;
-        padding: 10px 16px;
-      }
-      .quote-card {
-        padding: 16px;
-      }
-      .floating-top-button {
-        font-size: 13px;
-        padding: 10px 14px;
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
+  <a id="top"></a>
   <header>
     <h1>⭐️ お気に入り名言</h1>
     <a href="{{ url_for('index') }}" class="nav-button">⬅ トップに戻る</a>
@@ -120,6 +156,7 @@
   {% if favorites %}
     {% for item in favorites %}
       <div class="quote-card">
+        <span class="favorite-icon added">❤</span>
         <p>「{{ item.quote }}」</p>
         <p>— {{ item.author }}</p>
         <p class="meta">{{ item.emotion }} / {{ item.scene }}</p>
@@ -133,10 +170,38 @@
       </div>
     {% endfor %}
   {% else %}
-    <p>まだお気に入りはありません。</p>
+    <p style="text-align: center; margin-top: 40px;">まだお気に入りはありません。</p>
   {% endif %}
 
-  <!-- ✅ 右下に常時表示されるトップボタン -->
-  <a href="#top" class="floating-top-button">⬆ トップへ</a>
+  <a href="#top" class="floating-top-button">⬆</a>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.favorite-icon').forEach(icon => {
+      icon.addEventListener('click', () => {
+        const quote = icon.getAttribute('data-quote');
+        const author = icon.getAttribute('data-author');
+        const emotion = icon.getAttribute('data-emotion');
+        const scene = icon.getAttribute('data-scene');
+
+        icon.classList.toggle('added');
+        icon.textContent = icon.classList.contains('added') ? '♥' : '♡';
+
+        if (icon.classList.contains('added')) {
+          fetch('/add_favorite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quote, author, emotion, scene })
+          });
+        } else {
+          fetch('/remove_favorite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quote, author })
+          });
+        }
+      });
+    });
+  });
+  </script>
 </body>
 </html>

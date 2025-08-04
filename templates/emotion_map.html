@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Emotion Map - Emotions Spark</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: url("{{ url_for('static', filename='img/stars.jpg') }}") center/cover no-repeat;
+    }
+    canvas {
+      display: block;
+    }
+    .label {
+      position: absolute;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    }
+    .back-button {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      padding: 8px 14px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    @media (max-width: 480px) {
+      .label {
+        font-size: 11px;
+      }
+      .back-button {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="back-button" onclick="location.href='/'">← トップに戻る</button>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script>
+    const emotionCounts = {
+      "悲しみ": 9,
+      "不安": 3,
+      "怒り": 2,
+      "孤独": 2,
+      "喜び": 5,
+      "愛情": 4,
+      "希望": 6,
+      "罪悪感": 3,
+      "焦り": 3,
+      "混乱": 2
+    };
+
+    const emotions = [
+      { name: "悲しみ", color: 0x3399ff, orbit: 2 },
+      { name: "不安", color: 0xff9966, orbit: 2.2 },
+      { name: "怒り", color: 0xff3333, orbit: 2.1 },
+      { name: "孤独", color: 0xcc66ff, orbit: 2.3 },
+      { name: "喜び", color: 0xffcc00, orbit: 2.8 },
+      { name: "愛情", color: 0xff9999, orbit: 2.6 },
+      { name: "希望", color: 0x66ff66, orbit: 3.0 },
+      { name: "罪悪感", color: 0xaaaaaa, orbit: 2.0 },
+      { name: "焦り", color: 0xffcc99, orbit: 2.3 },
+      { name: "混乱", color: 0xcc99ff, orbit: 2.5 }
+    ];
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = window.innerWidth < 600 ? 8 : 6;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.PointLight(0xffffff, 1);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    const planets = [];
+    const labels = [];
+
+    emotions.forEach((e, i) => {
+      const count = emotionCounts[e.name] || 1;
+      const size = 0.15 + count * 0.07;
+
+      // 惑星本体
+      const geometry = new THREE.SphereGeometry(size, 32, 32);
+      const material = new THREE.MeshStandardMaterial({ color: e.color });
+      const planet = new THREE.Mesh(geometry, material);
+      scene.add(planet);
+
+      // オーラ
+      const auraGeometry = new THREE.SphereGeometry(size * 1.6, 32, 32);
+      const auraMaterial = new THREE.MeshBasicMaterial({
+        color: e.color,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false
+      });
+      const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+      scene.add(aura);
+
+      planets.push({
+        mesh: planet,
+        aura: aura,
+        angle: i * (2 * Math.PI / emotions.length),
+        orbit: e.orbit
+      });
+
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.innerText = `${e.name}（${count}）`;
+      document.body.appendChild(label);
+      labels.push(label);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const time = Date.now() * 0.001;
+
+      planets.forEach((p, i) => {
+        const x = Math.cos(p.angle + time * 0.1) * p.orbit;
+        const y = Math.sin(p.angle + time * 0.1) * p.orbit * 0.6;
+        const z = Math.sin(p.angle + time * 0.1) * p.orbit * 0.3;
+
+        p.mesh.position.set(x, y, z);
+        p.aura.position.set(x, y, z);
+
+        const vector = p.mesh.position.clone().project(camera);
+        const screenX = (vector.x * 0.5 + 0.5) * window.innerWidth;
+        const screenY = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+        labels[i].style.left = `${screenX}px`;
+        labels[i].style.top = `${screenY}px`;
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
