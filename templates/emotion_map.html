@@ -10,18 +10,19 @@
       overflow: hidden;
       background: url("{{ url_for('static', filename='img/stars.jpg') }}") center/cover no-repeat;
     }
-    canvas {
-      display: block;
-    }
+    canvas { display: block; }
     .label {
       position: absolute;
-      color: #fff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
-      pointer-events: none;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 6px;
       transform: translate(-50%, -50%);
       white-space: nowrap;
-      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+      text-shadow: 0 0 2px rgba(0,0,0,0.8);
+      pointer-events: none;
     }
     .back-button {
       position: absolute;
@@ -39,21 +40,13 @@
     .back-button:hover {
       background-color: rgba(255,255,255,0.1);
     }
-
-    @media (max-width: 480px) {
-      .label {
-        font-size: 11px;
-      }
-      .back-button {
-        font-size: 12px;
-        padding: 6px 10px;
-      }
-    }
   </style>
 </head>
 <body>
   <button class="back-button" onclick="location.href='/'">← トップに戻る</button>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
   <script>
     const emotionCounts = {
       "悲しみ": 9,
@@ -89,6 +82,39 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    // オーロラ風シェーダ背景
+    const auroraGeometry = new THREE.PlaneGeometry(20, 20);
+    const auroraMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0.0 },
+        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        uniform vec2 resolution;
+        varying vec2 vUv;
+        void main() {
+          vec2 uv = vUv;
+          float r = 0.3 + 0.2 * sin(time + uv.x * 10.0);
+          float g = 0.4 + 0.2 * sin(time + uv.y * 15.0);
+          float b = 0.5 + 0.2 * sin(time + uv.x * 8.0 + uv.y * 3.0);
+          gl_FragColor = vec4(r, g, b, 0.2);
+        }
+      `,
+      transparent: true,
+      depthWrite: false
+    });
+    const aurora = new THREE.Mesh(auroraGeometry, auroraMaterial);
+    aurora.position.z = -5;
+    scene.add(aurora);
+
     const light = new THREE.PointLight(0xffffff, 1);
     light.position.set(10, 10, 10);
     scene.add(light);
@@ -98,23 +124,27 @@
 
     emotions.forEach((e, i) => {
       const count = emotionCounts[e.name] || 1;
-      const size = 0.15 + count * 0.07;
+      const size = 0.18 + count * 0.06;
 
-      // 惑星本体
+      const material = new THREE.MeshStandardMaterial({
+        color: e.color,
+        emissive: e.color,
+        emissiveIntensity: 0.4
+      });
+
       const geometry = new THREE.SphereGeometry(size, 32, 32);
-      const material = new THREE.MeshStandardMaterial({ color: e.color });
       const planet = new THREE.Mesh(geometry, material);
+      planet.userData.emotion = e.name;
       scene.add(planet);
 
-      // オーラ
-      const auraGeometry = new THREE.SphereGeometry(size * 1.6, 32, 32);
-      const auraMaterial = new THREE.MeshBasicMaterial({
+      const auraGeo = new THREE.SphereGeometry(size * 1.4, 32, 32);
+      const auraMat = new THREE.MeshBasicMaterial({
         color: e.color,
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.12,
         depthWrite: false
       });
-      const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+      const aura = new THREE.Mesh(auraGeo, auraMat);
       scene.add(aura);
 
       planets.push({
@@ -131,15 +161,33 @@
       labels.push(label);
     });
 
-    function animate() {
+    // Raycaster（惑星クリック用）
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    window.addEventListener('click', (event) => {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(planets.map(p => p.mesh));
+      if (intersects.length > 0) {
+        const emotion = intersects[0].object.userData.emotion;
+        window.location.href = `/history?emotion=${encodeURIComponent(emotion)}`;
+      }
+    });
+
+    function animate(time) {
       requestAnimationFrame(animate);
-      const time = Date.now() * 0.001;
+
+      if (auroraMaterial.uniforms.time) {
+        auroraMaterial.uniforms.time.value = time * 0.001;
+      }
+
+      const t = Date.now() * 0.001;
 
       planets.forEach((p, i) => {
-        const x = Math.cos(p.angle + time * 0.1) * p.orbit;
-        const y = Math.sin(p.angle + time * 0.1) * p.orbit * 0.6;
-        const z = Math.sin(p.angle + time * 0.1) * p.orbit * 0.3;
-
+        const x = Math.cos(p.angle + t * 0.12) * p.orbit;
+        const y = Math.sin(p.angle + t * 0.12) * p.orbit * 0.6;
+        const z = Math.sin(p.angle + t * 0.12) * p.orbit * 0.3;
         p.mesh.position.set(x, y, z);
         p.aura.position.set(x, y, z);
 
@@ -159,6 +207,7 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      auroraMaterial.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
     });
   </script>
 </body>
